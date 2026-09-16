@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Gradski prevoz Pazova — red vožnje</title>
+<meta name="description" content="Red vožnje gradskog i prigradskog prevoza opštine Stara Pazova, na snazi od 1. septembra 2026." />
+<meta name="theme-color" content="#ffffff" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #FFFFFF; }
+  body { -webkit-font-smoothing: antialiased; }
+  button, select { font-family: inherit; }
+  #app { max-width: 640px; margin: 0 auto; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js" crossorigin></script>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+
+/* Podaci: zvanični red vožnje ASP „Strela“ Obrenovac, upisan 28.08.2026,
+   u primeni od 01.09.2026. Vremena na međustajalištima računaju se iz
+   fiksnih razmaka (offsets) koji su u zvaničnim tabelama isti za sve polaske. */
+
+const L1A = ["Stara Pazova AS","Izlaz ka N. Pazovi – Dunav","Energoprojekt","Bazeni","Ulaz u Novu Pazovu","Centar","Izlaz – Elektrometal","Aerodrom, okretnica"];
+const O1A = [0,3,5,9,12,15,17,20];
+const L1B = ["Aerodrom, okretnica","Izlaz – Elektrometal","Centar","Ulaz u Novu Pazovu","Bazeni","Energoprojekt","Izlaz ka N. Pazovi – Dunav","Stara Pazova AS"];
+const O1B = [0,3,5,8,11,15,17,20];
+
+const L2A = ["Stara Pazova AS","Restoran Putnik","Lasta","Diana","Vojka, Metal centar","Vojka, Ulaz 1","Vojka, Ulaz 2","Vojka, Ulaz 3","Vojka, Centar","Vojka, Izlaz","Krnješevci, Ulaz","Krnješevci, Centar","Krnješevci, Izlaz","Krnješevci, Industrijska zona"];
+const O2A = [0,2,3,4,6,8,9,10,11,12,17,18,19,20];
+const L2B = ["Krnješevci, Industrijska zona","Krnješevci, Izlaz","Krnješevci, Centar","Krnješevci, Ulaz","Vojka, Izlaz","Vojka, Centar","Vojka, Ulaz 3","Vojka, Ulaz 2","Vojka, Ulaz 1","Vojka, Metal centar","Diana","Lasta","Restoran Putnik","Stara Pazova AS"];
+const O2B = [0,1,2,3,8,9,10,11,12,14,16,17,18,20];
+
+const L4A = ["Stara Pazova AS","Stara Pazova, centar","Škola Pinki","Vuka Karadžića / PPO","Kuća fudbala","Nestle","Stari Banovci, Ulaz","Stari Banovci, Breg","Stari Banovci, Centar","Stari Banovci, Šljunkara","Stari Banovci, Staro groblje","Stari Banovci, Izlaz granica LTS","Stari Banovci, Petrinci 2","Belegiš, Petrinci 1","Belegiš, Ulaz","Belegiš, Breg","Belegiš 1","Belegiš, Centar","Belegiš, Izlaz","Surduk, Ulaz","Surduk, Centar","Surduk, Cincorija","Surduk, Okretnica"];
+const O4A = [0,1,2,3,4,5,14,15,16,17,18,19,20,22,23,24,25,26,27,35,37,38,40];
+const L4B = ["Surduk, Okretnica","Surduk, Cincorija","Surduk, Centar","Surduk, Ulaz","Belegiš, Izlaz","Belegiš, Centar","Belegiš 1","Belegiš, Breg","Belegiš, Ulaz","Belegiš, Petrinci 1","Stari Banovci, Petrinci 2","Stari Banovci, Izlaz granica LTS","Stari Banovci, Staro groblje","Stari Banovci, Šljunkara","Stari Banovci, Centar","Stari Banovci, Breg","Stari Banovci, Ulaz","Nestle","Kuća fudbala","Vuka Karadžića / PPO","Škola Pinki","Stara Pazova, centar","Stara Pazova AS"];
+const O4B = [0,2,3,5,13,14,15,16,17,18,20,21,22,23,24,25,26,35,36,37,38,39,40];
+
+const L5A = ["Stara Pazova AS","Izlaz ka Novoj Pazovi – Dunav","Energoprojekt","Banovački put (posle kružnog)","Banovački put (MTU)","Pere Čodanovića 1","Pere Čodanovića 2","Stari Banovci, Breg","Stari Banovci, Izlaz","Banovci-Dunav, Kablar 1","Banovci-Dunav, Kablar","Novi Banovci, Ulaz","Novi Banovci, Centar","Novi Banovci, Vinogradarska","Novi Banovci, Izlaz"];
+const O5A = [0,3,5,8,11,16,17,18,20,22,24,26,28,29,30];
+const L5B = ["Novi Banovci, Izlaz","Novi Banovci, Vinogradarska","Novi Banovci, Centar","Novi Banovci, Ulaz","Banovci-Dunav, Kablar","Banovci-Dunav, Kablar 1","Stari Banovci, Izlaz","Stari Banovci, Breg","Pere Čodanovića 2","Pere Čodanovića 1","Banovački put (Deleze)","Bazeni","Energoprojekt","Izlaz ka Novoj Pazovi – Dunav","Stara Pazova AS"];
+const O5B = [0,1,3,5,7,9,11,13,15,16,20,23,26,28,30];
+
+const L6A = ["Stara Pazova AS","Železnička stanica","Njegoševa (kod crkve)","Jana Bota","Kralja Petra Prvog","Kralja Petra Prvog 1","Stara Pazova, centar","Škola Pinki","Vuka Karadžića / PPO","Kuća fudbala 1 (u zoni)","Kuća fudbala 2 (u zoni)","Nestle 1 (u zoni)","Nestle (ka Staroj Pazovi)","Kuća fudbala","Vuka Karadžića / PPO","Škola Pinki","Stara Pazova, centar","Stara Pazova AS","Ćirila i Metodija 1","Železnička stanica"];
+const O6A = [-5,0,2,4,6,8,11,14,17,19,21,23,25,27,29,32,35,36,38,40];
+const L6B = ["Stara Pazova AS","Kralja Petra Prvog 1","Kralja Petra Prvog","Vinogradarska","Petrović Salaš","Vinogradarska (povratak)","Kralja Petra Prvog","Kralja Petra Prvog 1","Stara Pazova AS"];
+const O6B = [0,2,4,6,25,44,46,48,50];
+
+const L7A = ["Bazeni","Miloša Obilića 1","Miloša Obilića 2","Kneza Mihaila 1","Kneza Mihaila 2","Njegoševa","Njegoševa 1","Železnička stanica N. Pazova","Cvije Kukolja","Krajiška (kod groblja)","Četvrta industrijska","Peta industrijska","Bazeni"];
+const O7A = [0,3,5,7,9,11,13,15,17,19,21,23,25];
+
+const L8A = ["Surduk, Okretnica","Surduk, Cincorija","Surduk, Centar","Surduk, Ulaz","Belegiš, Izlaz","Belegiš, Centar","Belegiš 1","Belegiš, Breg","Belegiš, Ulaz","Belegiš, Petrinci 1","Stari Banovci, Petrinci 2","Stari Banovci, Izlaz granica LTS","Stari Banovci, Staro groblje","Stari Banovci, Šljunkara","Stari Banovci, Centar","Stari Banovci, Breg","Stari Banovci, Izlaz","Banovci-Dunav, Kablar 1","Banovci-Dunav, Kablar","Novi Banovci, Ulaz","Novi Banovci, Centar","Novi Banovci, Vinogradarska","Novi Banovci, Izlaz"];
+const O8A = [0,2,5,7,15,17,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35];
+const L8B = ["Novi Banovci, Izlaz","Novi Banovci, Vinogradarska","Novi Banovci, Centar","Novi Banovci, Ulaz","Banovci-Dunav, Kablar","Banovci-Dunav, Kablar 1","Stari Banovci, Izlaz","Stari Banovci, Breg","Stari Banovci, Centar","Stari Banovci, Šljunkara","Stari Banovci, Staro groblje","Stari Banovci, Izlaz granica LTS","Stari Banovci, Petrinci 2","Belegiš, Petrinci 1","Belegiš, Ulaz","Belegiš, Breg","Belegiš 1","Belegiš, Centar","Belegiš, Izlaz","Surduk, Ulaz","Surduk, Centar","Surduk, Cincorija","Surduk, Okretnica"];
+const O8B = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,28,30,33,35];
+
+const LINES = [
+  {
+    id: "1",
+    color: "#D8452F",
+    title: "Stara Pazova – Nova Pazova (Aerodrom)",
+    notes: ["Polasci koji ne idu do aerodroma skraćuju se na stajalištu Elektrometal. U tabeli im posle Elektrometala nema vremena."],
+    dirs: [
+      {
+        key: "a", from: "Stara Pazova AS", to: "Aerodrom", stops: L1A, offsets: O1A,
+        trips: {
+          radni: ["05:00",["05:45",0,6],"06:30",["06:40",0,6],"07:25","08:10","09:00","09:45","10:30","11:20","12:10",["12:45",0,6],"12:55","13:50","14:40","15:30","16:25","17:15","18:10","19:00","19:45","20:25","21:10","22:10"],
+          subota: [["05:45",0,6],"06:55","08:20","09:45","11:05","12:30",["13:30",0,6],"14:20",["15:15",0,6],"15:55","17:10","18:30",["19:30",0,6],"20:40",["22:10",0,6]],
+          nedelja: ["06:40","08:20","09:45","11:05","12:30","14:20","15:55","17:10","18:30","20:40",["22:10",0,6]],
+        },
+      },
+      {
+        key: "b", from: "Aerodrom", to: "Stara Pazova AS", stops: L1B, offsets: O1B,
+        trips: {
+          radni: ["05:20",["06:05",1,7],"06:55",["07:00",1,7],"07:45","08:40","09:20","10:10","10:55","11:40","12:30",["13:05",1,7],"13:15","14:15","15:05","16:00","16:50","17:40","18:35","19:25","20:05","20:50","21:35","22:30"],
+          subota: [["06:05",1,7],"07:25","08:40","10:25","11:45","12:50",["13:50",1,7],"14:40",["15:35",1,7],"16:25","17:45","19:05",["19:50",1,7],"21:15",["22:30",1,7]],
+          nedelja: ["07:25","09:25","10:25","11:45","13:05","14:40","16:25","17:45","19:05","21:15",["22:30",1,7]],
+        },
+      },
+    ],
+  },
+  {
+    id: "2",
+    color: "#1F8A7C",
+    title: "Stara Pazova – Vojka – Krnješevci",
+    notes: ["Pojedini polasci saobraćaju samo na delu trase između Stare Pazove i Vojke."],
+    dirs: [
+      {
+        key: "a", from: "Stara Pazova AS", to: "Krnješevci", stops: L2A, offsets: O2A,
+        trips: {
+          radni: [["04:30",0,9],"05:00","05:40","06:35","07:20","09:00","11:20","12:55","13:45","14:25","15:30","16:30","18:15","19:05","19:55","21:05","22:15"],
+          subota: ["05:00","06:15","07:10",["09:00",0,9],"10:50","13:10","14:25","15:15","16:35","19:05",["21:10",0,9],"22:15"],
+          nedelja: ["06:00",["09:00",0,9],"10:50",["13:05",0,9],"15:00","16:30","19:05",["21:05",0,9]],
+        },
+      },
+      {
+        key: "b", from: "Krnješevci", to: "Stara Pazova AS", stops: L2B, offsets: O2B,
+        trips: {
+          radni: [["04:45",4,13],"05:20","06:00","06:55","07:40","09:20","11:40","13:15","14:05","14:45","15:50","16:50","18:35","19:25","20:15","21:25","22:35"],
+          subota: ["05:20","06:35","07:30",["09:15",4,13],"11:10","13:30","14:45","15:35","16:55","19:25",["21:25",4,13],"22:35"],
+          nedelja: ["06:20",["09:15",4,13],"11:10",["13:20",4,13],"15:20","16:50","19:25",["21:20",4,13]],
+        },
+      },
+    ],
+  },
+  {
+    id: "3",
+    color: "#B5820D",
+    title: "Stara Pazova – Golubinci",
+    notes: [],
+    dirs: [
+      {
+        key: "a", from: "Stara Pazova AS", to: "Golubinci, Putinačka 2",
+        stops: ["Stara Pazova AS","Ćirila i Metodija 1","Lifam","Golubinci, Ulaz","Golubinci, Centar","Putinačka 1","Putinačka 2"],
+        offsets: [0,1,3,9,12,13,15],
+        trips: {
+          radni: ["05:00","05:45","06:45","08:10","09:20","11:20","12:00","13:00","13:45","15:15","16:30","18:15","19:15","19:55","21:00","22:15"],
+          subota: ["05:10","06:10","07:10","09:00","11:30","13:20","14:25","16:30","19:15","21:00","22:15"],
+          nedelja: ["06:10","09:00","11:40","13:10","14:25","16:30","20:00"],
+        },
+      },
+      {
+        key: "b", from: "Golubinci, Putinačka 2", to: "Stara Pazova AS",
+        stops: ["Putinačka 2","Putinačka 1","Golubinci, Centar","Golubinci, Ulaz","Lifam","Ćirila i Metodija 1","Stara Pazova AS"],
+        offsets: [0,2,3,6,12,14,15],
+        trips: {
+          radni: ["05:15","06:00","07:00","08:25","09:40","11:35","12:20","13:15","14:00","15:30","16:45","18:30","19:30","20:10","21:15","22:30"],
+          subota: ["05:25","06:25","07:25","09:15","11:45","13:35","14:40","16:45","19:30","21:15","22:30"],
+          nedelja: ["06:25","09:15","12:00","13:25","14:40","16:45","20:15"],
+        },
+      },
+    ],
+  },
+  {
+    id: "4",
+    color: "#3A6FCC",
+    title: "Stara Pazova – Stari Banovci – Belegiš – Surduk",
+    notes: ["Po dolasku na okretnicu u Surduku pojedini polasci nastavljaju vožnju na liniji 8."],
+    dirs: [
+      {
+        key: "a", from: "Stara Pazova AS", to: "Surduk, okretnica", stops: L4A, offsets: O4A,
+        trips: {
+          radni: ["04:05","04:55","05:50","07:30","09:00","11:45","13:15","13:45","15:10","16:30","18:15","19:10","19:55","22:20"],
+          subota: ["04:55","06:00","09:00","12:00","14:10","15:30","17:00","19:05","22:30"],
+          nedelja: ["06:00","06:45","10:45","14:15","15:35","19:05","21:15"],
+        },
+      },
+      {
+        key: "b", from: "Surduk, okretnica", to: "Stara Pazova AS", stops: L4B, offsets: O4B,
+        trips: {
+          radni: ["05:50","06:35","08:10","09:40","12:35","13:55","14:25","15:50","17:10","18:55","19:50","20:35","23:00"],
+          subota: ["05:50","09:40","12:40","14:50","16:10","17:40","19:45","23:10"],
+          nedelja: ["07:25","11:25","14:55","16:15","19:45","21:55"],
+        },
+      },
+    ],
+  },
+  {
+    id: "5",
+    color: "#7B51BE",
+    title: "Stara Pazova – Nova Pazova – Stari Banovci – Novi Banovci",
+    notes: ["Poslednji polazak iz Novih Banovaca završava liniju 8 i ide do Stare Pazove."],
+    dirs: [
+      {
+        key: "a", from: "Stara Pazova AS", to: "Novi Banovci", stops: L5A, offsets: O5A,
+        trips: {
+          radni: ["04:55","06:10","07:10","08:10","09:40","11:10","12:15","13:50","15:30","16:30","18:10","19:10","20:10","22:10"],
+          subota: ["05:00","06:00","09:00","11:30","13:00","15:30","18:10","20:10","22:10"],
+          nedelja: ["05:50","09:00","11:30","14:15","17:45","19:45","22:10"],
+        },
+      },
+      {
+        key: "b", from: "Novi Banovci", to: "Stara Pazova AS", stops: L5B, offsets: O5B,
+        trips: {
+          radni: ["05:25","06:40","07:40","08:40","10:10","11:40","12:45","14:20","16:00","17:00","18:40","19:40","20:40","22:05","22:40"],
+          subota: ["05:30","06:30","09:30","12:00","13:30","16:00","18:40","20:40","21:35","22:40"],
+          nedelja: ["06:20","09:30","12:00","15:15","18:15","19:20","20:15","22:40"],
+        },
+      },
+    ],
+  },
+  {
+    id: "6",
+    color: "#C4426F",
+    title: "Gradska linija Stara Pazova",
+    notes: ["Polasci preko Petrović Salaša saobraćaju samo ponedeljkom, četvrtkom i petkom."],
+    dirs: [
+      {
+        key: "a", from: "Železnička stanica", to: "kružno", stops: L6A, offsets: O6A,
+        trips: {
+          radni: [["04:45",0,19],["05:30",1,19],["06:20",1,19],["07:10",1,19],["07:50",1,19],["08:45",1,19],["09:45",1,19],["10:45",1,19],["11:50",1,19],["12:35",1,19],["13:15",1,19],["13:55",1,19],["14:50",1,19],["15:45",1,19],["16:45",1,19],["17:45",1,19],["18:35",1,19],["19:20",1,19],["20:15",1,19],["21:50",1,19]],
+          subota: [["04:45",0,19],["05:30",1,19],["06:50",1,19],["07:50",1,19],["09:45",1,19],["11:45",1,19],["13:05",1,19],["13:45",1,19],["14:50",1,19],["15:40",1,19],["17:05",1,19],["17:50",1,19],["19:50",1,19],["21:05",1,19]],
+          nedelja: [["05:45",0,19],["07:05",1,19],["07:50",1,19],["09:05",1,19],["11:10",1,19],["12:50",1,19],["13:50",1,19],["15:40",1,19],["17:05",1,19],["18:50",1,19]],
+        },
+      },
+      {
+        key: "b", from: "Stara Pazova AS", to: "Petrović Salaš", stops: L6B, offsets: O6B,
+        trips: { radni: ["07:30","11:30","17:15"], subota: [], nedelja: [] },
+      },
+    ],
+  },
+  {
+    id: "7",
+    color: "#3F8F2F",
+    title: "Gradska linija Nova Pazova",
+    notes: [],
+    dirs: [
+      {
+        key: "a", from: "Bazeni", to: "kružno", stops: L7A, offsets: O7A,
+        trips: {
+          radni: ["05:20","05:55","06:20","06:45","07:10","07:45","08:15","09:15","10:00","11:20","12:00","12:45","13:10","13:35","14:00","15:00","15:45","16:15","16:45","17:45","18:35","19:30","21:00","22:00","22:30"],
+          subota: ["05:30","06:20","07:25","08:20","10:25","11:20","12:20","13:25","14:10","15:25","16:25","17:25","18:25","19:25","20:20","21:25"],
+          nedelja: ["06:20","07:25","08:20","10:25","11:20","12:20","13:25","14:10","16:25","17:20","19:25","20:20"],
+        },
+      },
+    ],
+  },
+  {
+    id: "8",
+    color: "#B0602A",
+    title: "Surduk – Belegiš – Stari Banovci – Novi Banovci",
+    notes: ["Po dolasku u Nove Banovce poslednji polazak nastavlja na liniji 5 i završava vožnju na Autobuskoj stanici u Staroj Pazovi."],
+    dirs: [
+      {
+        key: "a", from: "Surduk, okretnica", to: "Novi Banovci", stops: L8A, offsets: O8A,
+        trips: {
+          radni: ["04:50","06:05","07:50","10:40","11:50","13:00","15:15","16:30","17:40","19:15","21:30"],
+          subota: ["06:50","10:30","12:00","13:10","14:45","17:10","21:00"],
+          nedelja: ["06:50","10:35","12:50","15:45","18:45"],
+        },
+      },
+      {
+        key: "b", from: "Novi Banovci", to: "Surduk, okretnica", stops: L8B, offsets: O8B,
+        trips: {
+          radni: ["05:25","07:00","08:30","11:15","12:25","13:45","15:55","17:05","18:25","20:00"],
+          subota: ["07:35","11:15","12:35","14:10","15:20","17:50"],
+          nedelja: ["07:30","11:15","13:35","16:20"],
+        },
+      },
+    ],
+  },
+];
+
+const DAYS = [
+  { key: "radni", label: "Radni dan" },
+  { key: "subota", label: "Subota" },
+  { key: "nedelja", label: "Nedelja" },
+];
+
+const VIEWS = [
+  { key: "sledeci", label: "Naredni" },
+  { key: "ceodan", label: "Ceo dan" },
+  { key: "tabela", label: "Tabela" },
+];
+
+const C = {
+  bg: "#FFFFFF",
+  panel: "#F1F2F5",
+  panelSoft: "#F7F8FA",
+  line: "#E1E3E9",
+  ink: "#15171C",
+  mid: "#5A6070",
+  faint: "#9AA0AE",
+};
+
+const dayKeyFor = (d) => (d === 0 ? "nedelja" : d === 6 ? "subota" : "radni");
+const toMin = (t) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+};
+const fmt = (m) =>
+  String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+const parseTrip = (tr, n) =>
+  Array.isArray(tr) ? { t: tr[0], s: tr[1], e: tr[2] } : { t: tr, s: 0, e: n - 1 };
+
+/* Vreme polaska sa stajališta i, ili null ako ga taj polazak ne dodiruje. */
+function timeAt(trip, dir, i) {
+  if (i < trip.s || i > trip.e) return null;
+  if (!dir.offsets) return i === 0 ? toMin(trip.t) : null;
+  return toMin(trip.t) - dir.offsets[trip.s] + dir.offsets[i];
+}
+
+function RedVoznje() {
+  const [now, setNow] = useState(new Date());
+  const [lineId, setLineId] = useState("1");
+  const [dirKey, setDirKey] = useState("a");
+  const [day, setDay] = useState(dayKeyFor(new Date().getDay()));
+  const [view, setView] = useState("sledeci");
+  const [stopIdx, setStopIdx] = useState(0);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const line = LINES.find((l) => l.id === lineId);
+  const dir = line.dirs.find((d) => d.key === dirKey) || line.dirs[0];
+  const rawTrips = dir.trips[day] || [];
+  const trips = useMemo(
+    () => rawTrips.map((t) => parseTrip(t, dir.stops.length)),
+    [rawTrips, dir]
+  );
+
+  const isToday = day === dayKeyFor(now.getDay());
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const idx = Math.min(stopIdx, dir.stops.length - 1);
+
+  /* Polasci sa izabranog stajališta */
+  const departures = useMemo(() => {
+    const out = [];
+    trips.forEach((tr, ti) => {
+      const m = timeAt(tr, dir, idx);
+      if (m !== null) out.push({ m, ti });
+    });
+    return out.sort((a, b) => a.m - b.m);
+  }, [trips, dir, idx]);
+
+  const nextPos = isToday ? departures.findIndex((d) => d.m >= nowMin) : -1;
+
+  const visible = useMemo(() => {
+    if (showAll || nextPos < 1) return departures;
+    return departures.slice(Math.max(0, nextPos - 1));
+  }, [departures, nextPos, showAll]);
+  const hidden = departures.length - visible.length;
+
+  const pickLine = (id) => {
+    setLineId(id);
+    setDirKey("a");
+    setStopIdx(0);
+    setShowAll(false);
+  };
+  const swapDir = () => {
+    const other = line.dirs.find((d) => d.key !== dir.key);
+    if (other) setDirKey(other.key);
+    setStopIdx(0);
+    setShowAll(false);
+  };
+
+  const dayWord =
+    day === "subota" ? "subotom" : day === "nedelja" ? "nedeljom" : "radnim danima";
+  const hasStopTimes = !!dir.offsets;
+
+  const btn = (on) => ({
+    flex: 1,
+    borderRadius: 12,
+    padding: "9px 0",
+    fontSize: 12.5,
+    fontWeight: 600,
+    cursor: "pointer",
+    background: on ? C.panel : C.bg,
+    color: on ? C.ink : C.faint,
+    border: "1px solid " + (on ? C.panel : C.line),
+  });
+
+  return (
+    <div
+      style={{
+        fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+        background: C.bg,
+        color: C.ink,
+        minHeight: "100vh",
+        paddingBottom: 48,
+      }}
+    >
+      <header style={{ padding: "22px 20px 14px" }}>
+        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 650, letterSpacing: "-0.01em" }}>
+          Gradski prevoz Pazova
+        </h1>
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: C.mid }}>
+          Red vožnje na snazi od 1. septembra 2026. Prevoz je besplatan za sve putnike.
+        </p>
+      </header>
+
+      {/* Linije */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(8, 1fr)",
+          gap: 6,
+          padding: "0 20px 16px",
+        }}
+      >
+        {LINES.map((l) => {
+          const on = l.id === lineId;
+          return (
+            <button
+              key={l.id}
+              onClick={() => pickLine(l.id)}
+              aria-pressed={on}
+              aria-label={"Linija " + l.id}
+              style={{
+                width: "100%",
+                aspectRatio: "1 / 1",
+                maxWidth: 48,
+                borderRadius: 999,
+                padding: 0,
+                border: on ? "none" : "1px solid " + C.line,
+                background: on ? l.color : C.bg,
+                color: on ? "#FFFFFF" : C.mid,
+                fontSize: 16,
+                fontWeight: 650,
+                cursor: "pointer",
+              }}
+            >
+              {l.id}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Naziv linije */}
+      <div style={{ padding: "0 20px" }}>
+        <div
+          style={{
+            background: C.panelSoft,
+            borderLeft: "4px solid " + line.color,
+            borderRadius: 14,
+            padding: 16,
+          }}
+        >
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 650, lineHeight: 1.35 }}>
+            {line.title}
+          </h2>
+        </div>
+      </div>
+
+      {/* Smer */}
+      {line.dirs.length > 1 && (
+        <div style={{ padding: "16px 20px 0" }}>
+          <button
+            onClick={swapDir}
+            aria-label="Promeni smer"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              textAlign: "left",
+              borderRadius: 12,
+              padding: "10px 12px",
+              cursor: "pointer",
+              background: C.bg,
+              border: "1px solid " + C.line,
+            }}
+          >
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 11, color: C.faint }}>Polazak</span>
+              <span style={{ display: "block", fontSize: 14, fontWeight: 650 }}>{dir.from}</span>
+            </span>
+            <span
+              style={{
+                flexShrink: 0,
+                width: 34,
+                height: 34,
+                borderRadius: 999,
+                background: line.color,
+                color: "#FFFFFF",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M7 7h11l-3-3M17 17H6l3 3"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span style={{ flex: 1, minWidth: 0, textAlign: "right" }}>
+              <span style={{ display: "block", fontSize: 11, color: C.faint }}>Dolazak</span>
+              <span style={{ display: "block", fontSize: 14, fontWeight: 650 }}>{dir.to}</span>
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Dan */}
+      <div style={{ display: "flex", gap: 8, padding: "10px 20px 0" }}>
+        {DAYS.map((d) => {
+          const on = d.key === day;
+          return (
+            <button
+              key={d.key}
+              onClick={() => {
+                setDay(d.key);
+                setShowAll(false);
+              }}
+              aria-pressed={on}
+              style={{
+                ...btn(false),
+                background: on ? C.ink : C.bg,
+                color: on ? "#FFFFFF" : C.mid,
+                border: "1px solid " + (on ? C.ink : C.line),
+                fontSize: 13,
+                borderRadius: 12,
+                padding: "10px 0",
+              }}
+            >
+              {d.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Prikaz */}
+      <div style={{ display: "flex", gap: 8, padding: "10px 20px 0" }}>
+        {VIEWS.map((v) => (
+          <button
+            key={v.key}
+            onClick={() => setView(v.key)}
+            aria-pressed={v.key === view}
+            style={btn(v.key === view)}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Stajalište */}
+      {view !== "tabela" && hasStopTimes && (
+        <div style={{ padding: "14px 20px 0" }}>
+          <label
+            style={{ display: "block", fontSize: 11, color: C.faint, marginBottom: 4 }}
+            htmlFor="stajaliste"
+          >
+            Stajalište
+          </label>
+          <select
+            id="stajaliste"
+            value={idx}
+            onChange={(e) => {
+              setStopIdx(Number(e.target.value));
+              setShowAll(false);
+            }}
+            style={{
+              width: "100%",
+              borderRadius: 12,
+              padding: "10px 12px",
+              fontSize: 14,
+              fontWeight: 600,
+              color: C.ink,
+              background: C.bg,
+              border: "1px solid " + C.line,
+            }}
+          >
+            {dir.stops.map((st, i) => (
+              <option key={i} value={i}>
+                {i + 1}. {st}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Naredni polasci */}
+      {view === "sledeci" && (
+        <>
+          <div style={{ padding: "18px 20px 0" }}>
+            {departures.length === 0 ? (
+              <p style={{ margin: 0, fontSize: 14, color: C.mid }}>
+                Sa ovog stajališta nema polazaka {dayWord}.
+              </p>
+            ) : !isToday ? (
+              <p style={{ margin: 0, fontSize: 13, color: C.faint }}>
+                Prikazan je red vožnje za drugi dan, pa nema odbrojavanja.
+              </p>
+            ) : nextPos === -1 ? (
+              <p style={{ margin: 0, fontSize: 14, color: C.mid }}>
+                Danas više nema polazaka. Prvi sutra:{" "}
+                <strong>{fmt(departures[0].m)}</strong>
+              </p>
+            ) : (
+              <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                <span
+                  style={{
+                    fontSize: 40,
+                    fontWeight: 680,
+                    lineHeight: 1,
+                    color: line.color,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {fmt(departures[nextPos].m)}
+                </span>
+                <span style={{ fontSize: 14, color: C.mid }}>
+                  za {departures[nextPos].m - nowMin} min
+                </span>
+              </div>
+            )}
+          </div>
+
+          {departures.length > 0 && (
+            <div style={{ padding: "18px 20px 0" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                {visible.map((d, k) => {
+                  const pos = departures.indexOf(d);
+                  const isNext = pos === nextPos;
+                  const past = isToday && nextPos !== -1 && pos < nextPos;
+                  return (
+                    <div
+                      key={k}
+                      style={{
+                        borderRadius: 10,
+                        padding: "10px 0",
+                        textAlign: "center",
+                        fontSize: 15,
+                        fontWeight: 600,
+                        fontVariantNumeric: "tabular-nums",
+                        background: isNext ? line.color : C.panel,
+                        color: isNext ? "#FFFFFF" : past ? C.faint : C.ink,
+                      }}
+                    >
+                      {fmt(d.m)}
+                    </div>
+                  );
+                })}
+              </div>
+              {hidden > 0 && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  style={{
+                    marginTop: 12,
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    fontSize: 13,
+                    color: C.mid,
+                    textDecoration: "underline",
+                    textUnderlineOffset: 4,
+                    cursor: "pointer",
+                  }}
+                >
+                  Prikaži i ranije polaske ({hidden})
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Ceo dan sa izabranog stajališta */}
+      {view === "ceodan" && (
+        <div style={{ padding: "18px 20px 0" }}>
+          {departures.length === 0 ? (
+            <p style={{ margin: 0, fontSize: 14, color: C.mid }}>
+              Sa ovog stajališta nema polazaka {dayWord}.
+            </p>
+          ) : (
+            (() => {
+              const hours = Array.from(new Set(departures.map((d) => Math.floor(d.m / 60))));
+              return (
+                <div style={{ borderRadius: 14, overflow: "hidden", background: C.panelSoft }}>
+                  {hours.map((h, hi) => (
+                    <div
+                      key={h}
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        alignItems: "flex-start",
+                        padding: "6px 8px",
+                        borderTop: hi ? "1px solid " + C.line : "none",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 34,
+                          flexShrink: 0,
+                          textAlign: "center",
+                          padding: "6px 0",
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: line.color,
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {String(h).padStart(2, "0")}
+                      </div>
+                      <div style={{ flex: 1, display: "flex", flexWrap: "wrap", gap: 4 }}>
+                        {departures.map((d, pos) => {
+                          if (Math.floor(d.m / 60) !== h) return null;
+                          const isNext = pos === nextPos;
+                          const past = isToday && nextPos !== -1 && pos < nextPos;
+                          return (
+                            <span
+                              key={pos}
+                              style={{
+                                borderRadius: 6,
+                                padding: "5px 7px",
+                                fontSize: 14,
+                                fontWeight: 600,
+                                fontVariantNumeric: "tabular-nums",
+                                background: isNext ? line.color : C.panel,
+                                color: isNext ? "#FFFFFF" : past ? C.faint : C.ink,
+                              }}
+                            >
+                              {String(d.m % 60).padStart(2, "0")}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()
+          )}
+        </div>
+      )}
+
+      {/* Tabela stajališta x polasci */}
+      {view === "tabela" && (
+        <div style={{ padding: "18px 0 0" }}>
+          {trips.length === 0 ? (
+            <p style={{ margin: 0, padding: "0 20px", fontSize: 14, color: C.mid }}>
+              Ova linija ne saobraća {dayWord}.
+            </p>
+          ) : !hasStopTimes ? (
+            <p style={{ margin: 0, padding: "0 20px", fontSize: 14, color: C.mid }}>
+              Za ovu liniju nemam vremena po stajalištima, samo polaske sa prve stanice.
+            </p>
+          ) : (
+            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+              <table
+                style={{
+                  borderCollapse: "collapse",
+                  fontVariantNumeric: "tabular-nums",
+                  fontSize: 12,
+                }}
+              >
+                <tbody>
+                  {dir.stops.map((st, i) => (
+                    <tr key={i}>
+                      <th
+                        scope="row"
+                        style={{
+                          position: "sticky",
+                          left: 0,
+                          zIndex: 1,
+                          background: C.bg,
+                          textAlign: "left",
+                          fontWeight: i === 0 || i === dir.stops.length - 1 ? 700 : 500,
+                          color: i === 0 || i === dir.stops.length - 1 ? C.ink : C.mid,
+                          fontSize: 11.5,
+                          padding: "6px 10px 6px 20px",
+                          borderRight: "2px solid " + C.line,
+                          borderBottom: "1px solid " + C.line,
+                          minWidth: 132,
+                          maxWidth: 132,
+                          lineHeight: 1.25,
+                        }}
+                      >
+                        {st}
+                      </th>
+                      {trips.map((tr, ti) => {
+                        const m = timeAt(tr, dir, i);
+                        const isNext =
+                          nextPos !== -1 && departures[nextPos] && departures[nextPos].ti === ti;
+                        return (
+                          <td
+                            key={ti}
+                            style={{
+                              padding: "6px 8px",
+                              textAlign: "center",
+                              minWidth: 46,
+                              borderBottom: "1px solid " + C.line,
+                              background: isNext ? line.color + "1A" : "transparent",
+                              color: m === null ? C.faint : isNext ? line.color : C.ink,
+                              fontWeight: isNext ? 700 : 500,
+                            }}
+                          >
+                            {m === null ? "–" : fmt(m)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <p style={{ padding: "10px 20px 0", margin: 0, fontSize: 12, color: C.faint }}>
+            Tabela se pomera levo-desno. Crtica znači da polazak ne dodiruje to stajalište.
+          </p>
+        </div>
+      )}
+
+      {/* Napomene */}
+      {line.notes.length > 0 && (
+        <div style={{ padding: "26px 20px 0" }}>
+          <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+            {line.notes.map((n, i) => (
+              <li
+                key={i}
+                style={{ fontSize: 12.5, lineHeight: 1.6, color: C.mid, marginTop: i ? 8 : 0 }}
+              >
+                {n}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <p style={{ padding: "26px 20px 0", margin: 0, fontSize: 11.5, lineHeight: 1.6, color: C.faint }}>
+        Prevoznik: ASP „Strela“ Obrenovac, red vožnje upisan 28.08.2026. Vremena su planirana i
+        mogu da odstupaju od stvarnih dolazaka. Call centar:{" "}
+        <a
+          href="tel:+38122311617"
+          style={{ color: C.mid, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}
+        >
+          022/311-617
+        </a>
+      </p>
+    </div>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById("app")).render(<RedVoznje />);
+</script>
+</body>
+</html>
