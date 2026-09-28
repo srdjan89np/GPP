@@ -3,33 +3,282 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Gradski prevoz Pazova — red vožnje</title>
-<meta name="description" content="Red vožnje gradskog i prigradskog prevoza opštine Stara Pazova, na snazi od 1. septembra 2026." />
-<meta name="theme-color" content="#ffffff" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<title>Gradski prevoz Pazova</title>
+<meta name="description" content="Red vožnje gradskog i prigradskog prevoza opštine Stara Pazova, sa vremenima po stajalištima. Radi bez interneta." />
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#12141a" media="(prefers-color-scheme: dark)" />
 <style>
-  * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #FFFFFF; }
-  body { -webkit-font-smoothing: antialiased; }
-  button, select { font-family: inherit; }
-  #app { max-width: 640px; margin: 0 auto; }
+:root {
+  --bg: #ffffff;
+  --panel: #f1f2f5;
+  --panel-soft: #f7f8fa;
+  --line: #e1e3e9;
+  --ink: #15171c;
+  --mid: #5a6070;
+  --faint: #9aa0ae;
+  --accent: #d8452f;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: "Inter", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+#app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding-top: var(--safe-top);
+  padding-bottom: calc(40px + var(--safe-bottom));
+}
+
+button, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+
+/* Zaglavlje */
+.head { padding: 22px 20px 14px; }
+.head h1 { margin: 0; font-size: 24px; font-weight: 650; letter-spacing: -0.01em; }
+.head p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: var(--mid); }
+
+/* Izbor linije */
+.lines {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  padding: 0 20px 16px;
+}
+.line-btn {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 48px;
+  border-radius: 999px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--mid);
+  font-size: 16px;
+  font-weight: 650;
+}
+.line-btn[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Naziv linije */
+.title-card {
+  margin: 0 20px;
+  background: var(--panel-soft);
+  border-left: 4px solid var(--accent);
+  border-radius: 14px;
+  padding: 16px;
+}
+.title-card h2 { margin: 0; font-size: 17px; font-weight: 650; line-height: 1.35; }
+
+/* Smer */
+.dir-wrap { padding: 16px 20px 0; }
+.dir-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.dir-btn .col { flex: 1; min-width: 0; }
+.dir-btn .col.right { text-align: right; }
+.dir-btn .lbl { display: block; font-size: 11px; color: var(--faint); }
+.dir-btn .val { display: block; font-size: 14px; font-weight: 650; }
+.dir-btn .swap {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Trake dugmadi */
+.row { display: flex; gap: 8px; padding: 10px 20px 0; }
+.tab {
+  flex: 1;
+  border-radius: 12px;
+  padding: 10px 0;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--mid);
+  border: 1px solid var(--line);
+}
+.tab[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.row.views .tab { font-size: 12.5px; padding: 9px 0; color: var(--faint); }
+.row.views .tab[aria-pressed="true"] {
+  background: var(--panel);
+  color: var(--ink);
+  border-color: var(--panel);
+}
+
+/* Stajalište */
+.stop-wrap { padding: 14px 20px 0; }
+.stop-wrap label { display: block; font-size: 11px; color: var(--faint); margin-bottom: 4px; }
+.stop-wrap select {
+  width: 100%;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+/* Sledeći polazak */
+.next { padding: 18px 20px 0; }
+.next .big {
+  font-size: 40px;
+  font-weight: 680;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.next .in { font-size: 14px; color: var(--mid); margin-left: 12px; }
+.msg { margin: 0; font-size: 14px; line-height: 1.5; color: var(--mid); }
+.msg.small { font-size: 13px; color: var(--faint); }
+
+/* Mreža polazaka */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 18px 20px 0;
+}
+.slot {
+  border-radius: 10px;
+  padding: 10px 0;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: var(--panel);
+}
+.slot.next { background: var(--accent); color: #fff; }
+.slot.past { color: var(--faint); }
+
+.link-btn {
+  margin: 12px 20px 0;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--mid);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Ceo dan */
+.hours { margin: 18px 20px 0; border-radius: 14px; overflow: hidden; background: var(--panel-soft); }
+.hour-row { display: flex; gap: 10px; align-items: flex-start; padding: 6px 8px; }
+.hour-row + .hour-row { border-top: 1px solid var(--line); }
+.hour-key {
+  width: 34px;
+  flex-shrink: 0;
+  text-align: center;
+  padding: 6px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.mins { flex: 1; display: flex; flex-wrap: wrap; gap: 4px; }
+.min {
+  border-radius: 6px;
+  padding: 5px 7px;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: var(--panel);
+}
+.min.next { background: var(--accent); color: #fff; }
+.min.past { color: var(--faint); }
+
+/* Tabela */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 18px; }
+table { border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+th.stop {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--bg);
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--mid);
+  padding: 6px 10px 6px 20px;
+  border-right: 2px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  min-width: 134px;
+  max-width: 134px;
+  line-height: 1.25;
+}
+th.stop.end { font-weight: 700; color: var(--ink); }
+td {
+  padding: 6px 8px;
+  text-align: center;
+  min-width: 46px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 500;
+}
+td.skip { color: var(--faint); }
+td.now { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); font-weight: 700; }
+
+/* Napomene i podnožje */
+.notes { padding: 26px 20px 0; margin: 0; list-style: none; }
+.notes li { font-size: 12.5px; line-height: 1.6; color: var(--mid); }
+.notes li + li { margin-top: 8px; }
+.foot { padding: 26px 20px 0; margin: 0; font-size: 11.5px; line-height: 1.6; color: var(--faint); }
+.foot a { color: var(--mid); font-weight: 600; text-underline-offset: 3px; }
+.hint { padding: 10px 20px 0; margin: 0; font-size: 12px; color: var(--faint); }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12141a;
+    --panel: #21242d;
+    --panel-soft: #1a1d24;
+    --line: #2b2f3a;
+    --ink: #eceef3;
+    --mid: #a2a9b8;
+    --faint: #6d7486;
+  }
+  .line-btn[aria-pressed="true"], .slot.next, .min.next, .dir-btn .swap { color: #fff; }
+  .tab[aria-pressed="true"] { background: var(--ink); color: #12141a; }
+}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js" crossorigin></script>
 </head>
 <body>
 <div id="app"></div>
-
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useMemo } = React;
-
-
-/* Podaci: zvanični red vožnje ASP „Strela“ Obrenovac, upisan 28.08.2026,
-   u primeni od 01.09.2026. Vremena na međustajalištima računaju se iz
-   fiksnih razmaka (offsets) koji su u zvaničnim tabelama isti za sve polaske. */
+<noscript>Za prikaz reda vožnje potreban je JavaScript.</noscript>
+<script>
+/* Red vožnje — opština Stara Pazova.
+   Izvor: zvanične tabele ASP „Strela“ Obrenovac, upisane 28.08.2026,
+   u primeni od 01.09.2026.
+   offsets = razmak u minutima od prvog stajališta (isti za sve polaske).
+   Polazak "05:00" ide celom trasom; ["05:45",0,6] ide od stajališta 0 do 6. */
 
 const L1A = ["Stara Pazova AS","Izlaz ka N. Pazovi – Dunav","Energoprojekt","Bazeni","Ulaz u Novu Pazovu","Centar","Izlaz – Elektrometal","Aerodrom, okretnica"];
 const O1A = [0,3,5,9,12,15,17,20];
@@ -251,586 +500,398 @@ const LINES = [
   },
 ];
 
-const DAYS = [
-  { key: "radni", label: "Radni dan" },
-  { key: "subota", label: "Subota" },
-  { key: "nedelja", label: "Nedelja" },
-];
+/* Gradski prevoz Pazova — prikaz reda vožnje. Bez spoljnih biblioteka. */
+(function () {
+  "use strict";
 
-const VIEWS = [
-  { key: "sledeci", label: "Naredni" },
-  { key: "ceodan", label: "Ceo dan" },
-  { key: "tabela", label: "Tabela" },
-];
+  var DAYS = [
+    { key: "radni", label: "Radni dan", word: "radnim danima" },
+    { key: "subota", label: "Subota", word: "subotom" },
+    { key: "nedelja", label: "Nedelja", word: "nedeljom" }
+  ];
 
-const C = {
-  bg: "#FFFFFF",
-  panel: "#F1F2F5",
-  panelSoft: "#F7F8FA",
-  line: "#E1E3E9",
-  ink: "#15171C",
-  mid: "#5A6070",
-  faint: "#9AA0AE",
-};
+  var VIEWS = [
+    { key: "sledeci", label: "Naredni" },
+    { key: "ceodan", label: "Ceo dan" },
+    { key: "tabela", label: "Tabela" }
+  ];
 
-const dayKeyFor = (d) => (d === 0 ? "nedelja" : d === 6 ? "subota" : "radni");
-const toMin = (t) => {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-};
-const fmt = (m) =>
-  String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
-const parseTrip = (tr, n) =>
-  Array.isArray(tr) ? { t: tr[0], s: tr[1], e: tr[2] } : { t: tr, s: 0, e: n - 1 };
+  /* ---------- pomoćne ---------- */
 
-/* Vreme polaska sa stajališta i, ili null ako ga taj polazak ne dodiruje. */
-function timeAt(trip, dir, i) {
-  if (i < trip.s || i > trip.e) return null;
-  if (!dir.offsets) return i === 0 ? toMin(trip.t) : null;
-  return toMin(trip.t) - dir.offsets[trip.s] + dir.offsets[i];
-}
+  function toMin(t) {
+    var p = t.split(":");
+    return (+p[0]) * 60 + (+p[1]);
+  }
+  function fmt(m) {
+    var h = Math.floor(m / 60), mm = m % 60;
+    return (h < 10 ? "0" : "") + h + ":" + (mm < 10 ? "0" : "") + mm;
+  }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
 
-function RedVoznje() {
-  const [now, setNow] = useState(new Date());
-  const [lineId, setLineId] = useState("1");
-  const [dirKey, setDirKey] = useState("a");
-  const [day, setDay] = useState(dayKeyFor(new Date().getDay()));
-  const [view, setView] = useState("sledeci");
-  const [stopIdx, setStopIdx] = useState(0);
-  const [showAll, setShowAll] = useState(false);
+  function parseTrip(tr, n) {
+    return Array.isArray(tr)
+      ? { t: tr[0], s: tr[1], e: tr[2] }
+      : { t: tr, s: 0, e: n - 1 };
+  }
 
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 30000);
-    return () => clearInterval(t);
-  }, []);
+  /* Vreme polaska sa stajališta i, ili null ako ga taj polazak ne dodiruje. */
+  function timeAt(trip, dir, i) {
+    if (i < trip.s || i > trip.e) return null;
+    if (!dir.offsets) return i === 0 ? toMin(trip.t) : null;
+    return toMin(trip.t) - dir.offsets[trip.s] + dir.offsets[i];
+  }
 
-  const line = LINES.find((l) => l.id === lineId);
-  const dir = line.dirs.find((d) => d.key === dirKey) || line.dirs[0];
-  const rawTrips = dir.trips[day] || [];
-  const trips = useMemo(
-    () => rawTrips.map((t) => parseTrip(t, dir.stops.length)),
-    [rawTrips, dir]
-  );
+  function dayKeyFor(d) { return d === 0 ? "nedelja" : d === 6 ? "subota" : "radni"; }
 
-  const isToday = day === dayKeyFor(now.getDay());
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const idx = Math.min(stopIdx, dir.stops.length - 1);
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
 
-  /* Polasci sa izabranog stajališta */
-  const departures = useMemo(() => {
-    const out = [];
-    trips.forEach((tr, ti) => {
-      const m = timeAt(tr, dir, idx);
-      if (m !== null) out.push({ m, ti });
+  /* ---------- stanje ---------- */
+
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem("gpp") || "{}"); } catch (e) { saved = {}; }
+
+  var state = {
+    lineId: saved.lineId && LINES.some(function (l) { return l.id === saved.lineId; }) ? saved.lineId : "1",
+    dirKey: saved.dirKey === "b" ? "b" : "a",
+    stopIdx: typeof saved.stopIdx === "number" ? saved.stopIdx : 0,
+    day: dayKeyFor(new Date().getDay()),
+    view: "sledeci",
+    showAll: false
+  };
+
+  function save() {
+    try {
+      localStorage.setItem("gpp", JSON.stringify({
+        lineId: state.lineId, dirKey: state.dirKey, stopIdx: state.stopIdx
+      }));
+    } catch (e) { /* privatni režim — nije bitno */ }
+  }
+
+  function currentLine() {
+    return LINES.filter(function (l) { return l.id === state.lineId; })[0];
+  }
+  function currentDir(line) {
+    var d = line.dirs.filter(function (x) { return x.key === state.dirKey; })[0];
+    return d || line.dirs[0];
+  }
+
+  /* ---------- render ---------- */
+
+  var root = document.getElementById("app");
+
+  function render() {
+    var line = currentLine();
+    var dir = currentDir(line);
+    var dayDef = DAYS.filter(function (d) { return d.key === state.day; })[0];
+    var rawTrips = dir.trips[state.day] || [];
+    var trips = rawTrips.map(function (t) { return parseTrip(t, dir.stops.length); });
+
+    if (state.stopIdx > dir.stops.length - 1) state.stopIdx = 0;
+    var idx = state.stopIdx;
+
+    var now = new Date();
+    var isToday = state.day === dayKeyFor(now.getDay());
+    var nowMin = now.getHours() * 60 + now.getMinutes();
+
+    document.documentElement.style.setProperty("--accent", line.color);
+
+    var departures = [];
+    trips.forEach(function (tr, ti) {
+      var m = timeAt(tr, dir, idx);
+      if (m !== null) departures.push({ m: m, ti: ti });
     });
-    return out.sort((a, b) => a.m - b.m);
-  }, [trips, dir, idx]);
+    departures.sort(function (a, b) { return a.m - b.m; });
 
-  const nextPos = isToday ? departures.findIndex((d) => d.m >= nowMin) : -1;
+    var nextPos = -1;
+    if (isToday) {
+      for (var i = 0; i < departures.length; i++) {
+        if (departures[i].m >= nowMin) { nextPos = i; break; }
+      }
+    }
 
-  const visible = useMemo(() => {
-    if (showAll || nextPos < 1) return departures;
-    return departures.slice(Math.max(0, nextPos - 1));
-  }, [departures, nextPos, showAll]);
-  const hidden = departures.length - visible.length;
+    root.innerHTML = "";
 
-  const pickLine = (id) => {
-    setLineId(id);
-    setDirKey("a");
-    setStopIdx(0);
-    setShowAll(false);
-  };
-  const swapDir = () => {
-    const other = line.dirs.find((d) => d.key !== dir.key);
-    if (other) setDirKey(other.key);
-    setStopIdx(0);
-    setShowAll(false);
-  };
+    /* zaglavlje */
+    var head = el("header", "head");
+    head.appendChild(el("h1", null, "Gradski prevoz Pazova"));
+    head.appendChild(el("p", null,
+      "Red vožnje na snazi od 1. septembra 2026. Prevoz je besplatan za sve putnike."));
+    root.appendChild(head);
 
-  const dayWord =
-    day === "subota" ? "subotom" : day === "nedelja" ? "nedeljom" : "radnim danima";
-  const hasStopTimes = !!dir.offsets;
+    /* linije */
+    var lines = el("div", "lines");
+    LINES.forEach(function (l) {
+      var b = el("button", "line-btn", l.id);
+      b.setAttribute("aria-pressed", l.id === state.lineId ? "true" : "false");
+      b.setAttribute("aria-label", "Linija " + l.id);
+      if (l.id === state.lineId) b.style.background = l.color;
+      b.onclick = function () {
+        state.lineId = l.id;
+        state.dirKey = "a";
+        state.stopIdx = 0;
+        state.showAll = false;
+        save();
+        render();
+      };
+      lines.appendChild(b);
+    });
+    root.appendChild(lines);
 
-  const btn = (on) => ({
-    flex: 1,
-    borderRadius: 12,
-    padding: "9px 0",
-    fontSize: 12.5,
-    fontWeight: 600,
-    cursor: "pointer",
-    background: on ? C.panel : C.bg,
-    color: on ? C.ink : C.faint,
-    border: "1px solid " + (on ? C.panel : C.line),
+    /* naziv */
+    var card = el("div", "title-card");
+    card.style.borderLeftColor = line.color;
+    card.appendChild(el("h2", null, line.title));
+    root.appendChild(card);
+
+    /* smer */
+    if (line.dirs.length > 1) {
+      var dw = el("div", "dir-wrap");
+      var db = el("button", "dir-btn");
+      db.setAttribute("aria-label", "Promeni smer");
+
+      var c1 = el("span", "col");
+      c1.appendChild(el("span", "lbl", "Polazak"));
+      c1.appendChild(el("span", "val", dir.from));
+
+      var sw = el("span", "swap");
+      sw.style.background = line.color;
+      sw.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+        '<path d="M7 7h11l-3-3M17 17H6l3 3" stroke="currentColor" stroke-width="2" ' +
+        'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+      var c2 = el("span", "col right");
+      c2.appendChild(el("span", "lbl", "Dolazak"));
+      c2.appendChild(el("span", "val", dir.to));
+
+      db.appendChild(c1); db.appendChild(sw); db.appendChild(c2);
+      db.onclick = function () {
+        var other = line.dirs.filter(function (x) { return x.key !== dir.key; })[0];
+        if (other) state.dirKey = other.key;
+        state.stopIdx = 0;
+        state.showAll = false;
+        save();
+        render();
+      };
+      dw.appendChild(db);
+      root.appendChild(dw);
+    }
+
+    /* dan */
+    var rowDay = el("div", "row");
+    DAYS.forEach(function (d) {
+      var b = el("button", "tab", d.label);
+      b.setAttribute("aria-pressed", d.key === state.day ? "true" : "false");
+      b.onclick = function () { state.day = d.key; state.showAll = false; render(); };
+      rowDay.appendChild(b);
+    });
+    root.appendChild(rowDay);
+
+    /* prikaz */
+    var rowView = el("div", "row views");
+    VIEWS.forEach(function (v) {
+      var b = el("button", "tab", v.label);
+      b.setAttribute("aria-pressed", v.key === state.view ? "true" : "false");
+      b.onclick = function () { state.view = v.key; render(); };
+      rowView.appendChild(b);
+    });
+    root.appendChild(rowView);
+
+    /* stajalište */
+    if (state.view !== "tabela" && dir.offsets) {
+      var sws = el("div", "stop-wrap");
+      var lab = el("label", null, "Stajalište");
+      lab.setAttribute("for", "stajaliste");
+      var sel = el("select");
+      sel.id = "stajaliste";
+      dir.stops.forEach(function (st, i) {
+        var o = el("option", null, (i + 1) + ". " + st);
+        o.value = String(i);
+        if (i === idx) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.onchange = function () {
+        state.stopIdx = +sel.value;
+        state.showAll = false;
+        save();
+        render();
+      };
+      sws.appendChild(lab);
+      sws.appendChild(sel);
+      root.appendChild(sws);
+    }
+
+    if (state.view === "sledeci") renderNext(line, departures, nextPos, isToday, nowMin, dayDef);
+    else if (state.view === "ceodan") renderDay(line, departures, nextPos, isToday, dayDef);
+    else renderTable(line, dir, trips, departures, nextPos, dayDef);
+
+    /* napomene */
+    if (line.notes && line.notes.length) {
+      var ul = el("ul", "notes");
+      line.notes.forEach(function (n) { ul.appendChild(el("li", null, n)); });
+      root.appendChild(ul);
+    }
+
+    var foot = el("p", "foot");
+    foot.appendChild(document.createTextNode(
+      "Prevoznik: ASP „Strela“ Obrenovac, red vožnje upisan 28.08.2026. " +
+      "Vremena su planirana i mogu da odstupaju od stvarnih dolazaka. Call centar: "));
+    var a = el("a", null, "022/311-617");
+    a.href = "tel:+38122311617";
+    foot.appendChild(a);
+    root.appendChild(foot);
+  }
+
+  function renderNext(line, departures, nextPos, isToday, nowMin, dayDef) {
+    var box = el("div", "next");
+    if (!departures.length) {
+      box.appendChild(el("p", "msg", "Sa ovog stajališta nema polazaka " + dayDef.word + "."));
+    } else if (!isToday) {
+      box.appendChild(el("p", "msg small", "Prikazan je red vožnje za drugi dan, pa nema odbrojavanja."));
+    } else if (nextPos === -1) {
+      box.appendChild(el("p", "msg",
+        "Danas više nema polazaka. Prvi sledećeg dana: " + fmt(departures[0].m)));
+    } else {
+      var wrap = el("div");
+      var big = el("span", "big", fmt(departures[nextPos].m));
+      big.style.color = line.color;
+      var mins = departures[nextPos].m - nowMin;
+      wrap.appendChild(big);
+      wrap.appendChild(el("span", "in", mins === 0 ? "kreće sada" : "za " + mins + " min"));
+      box.appendChild(wrap);
+    }
+    root.appendChild(box);
+
+    if (!departures.length) return;
+
+    var start = (state.showAll || nextPos < 1) ? 0 : nextPos - 1;
+    var grid = el("div", "grid");
+    departures.slice(start).forEach(function (d, k) {
+      var pos = start + k;
+      var cls = "slot";
+      if (pos === nextPos) cls += " next";
+      else if (isToday && nextPos !== -1 && pos < nextPos) cls += " past";
+      var s = el("div", cls, fmt(d.m));
+      if (pos === nextPos) s.style.background = line.color;
+      grid.appendChild(s);
+    });
+    root.appendChild(grid);
+
+    if (start > 0) {
+      var b = el("button", "link-btn", "Prikaži i ranije polaske (" + start + ")");
+      b.onclick = function () { state.showAll = true; render(); };
+      root.appendChild(b);
+    }
+  }
+
+  function renderDay(line, departures, nextPos, isToday, dayDef) {
+    if (!departures.length) {
+      var p = el("p", "msg");
+      p.style.padding = "18px 20px 0";
+      p.textContent = "Sa ovog stajališta nema polazaka " + dayDef.word + ".";
+      root.appendChild(p);
+      return;
+    }
+    var hours = [];
+    departures.forEach(function (d) {
+      var h = Math.floor(d.m / 60);
+      if (hours.indexOf(h) === -1) hours.push(h);
+    });
+
+    var box = el("div", "hours");
+    hours.forEach(function (h) {
+      var row = el("div", "hour-row");
+      var key = el("div", "hour-key", pad2(h));
+      key.style.color = line.color;
+      row.appendChild(key);
+      var mins = el("div", "mins");
+      departures.forEach(function (d, pos) {
+        if (Math.floor(d.m / 60) !== h) return;
+        var cls = "min";
+        if (pos === nextPos) cls += " next";
+        else if (isToday && nextPos !== -1 && pos < nextPos) cls += " past";
+        var s = el("span", cls, pad2(d.m % 60));
+        if (pos === nextPos) s.style.background = line.color;
+        mins.appendChild(s);
+      });
+      row.appendChild(mins);
+      box.appendChild(row);
+    });
+    root.appendChild(box);
+  }
+
+  function renderTable(line, dir, trips, departures, nextPos, dayDef) {
+    if (!trips.length) {
+      var p = el("p", "msg");
+      p.style.padding = "18px 20px 0";
+      p.textContent = "Ova linija ne saobraća " + dayDef.word + ".";
+      root.appendChild(p);
+      return;
+    }
+    var activeTrip = nextPos !== -1 && departures[nextPos] ? departures[nextPos].ti : -1;
+
+    var scroll = el("div", "table-scroll");
+    var table = el("table");
+    var tbody = el("tbody");
+
+    dir.stops.forEach(function (st, i) {
+      var tr = el("tr");
+      var isEnd = i === 0 || i === dir.stops.length - 1;
+      var th = el("th", "stop" + (isEnd ? " end" : ""), st);
+      th.setAttribute("scope", "row");
+      tr.appendChild(th);
+      trips.forEach(function (t, ti) {
+        var m = timeAt(t, dir, i);
+        var td = el("td", m === null ? "skip" : (ti === activeTrip ? "now" : ""), m === null ? "–" : fmt(m));
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    scroll.appendChild(table);
+    root.appendChild(scroll);
+    root.appendChild(el("p", "hint",
+      "Tabela se pomera levo-desno. Crtica znači da polazak ne dodiruje to stajalište."));
+  }
+
+  /* ---------- pokretanje ---------- */
+
+  render();
+
+  // Osveži tek kad se promeni minut, i ne dok korisnik čita tabelu,
+  // da se prikaz ne pomera pod prstima.
+  var lastMin = new Date().getMinutes();
+  setInterval(function () {
+    var m = new Date().getMinutes();
+    if (m === lastMin) return;
+    lastMin = m;
+    if (state.view === "tabela") return;
+    render();
+  }, 10000);
+
+  // Povratak u prvi plan: dan je možda prešao u sledeći.
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) return;
+    state.day = dayKeyFor(new Date().getDay());
+    state.showAll = false;
+    lastMin = new Date().getMinutes();
+    render();
   });
 
-  return (
-    <div
-      style={{
-        fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
-        background: C.bg,
-        color: C.ink,
-        minHeight: "100vh",
-        paddingBottom: 48,
-      }}
-    >
-      <header style={{ padding: "22px 20px 14px" }}>
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 650, letterSpacing: "-0.01em" }}>
-          Gradski prevoz Pazova
-        </h1>
-        <p style={{ margin: "4px 0 0", fontSize: 13, color: C.mid }}>
-          Red vožnje na snazi od 1. septembra 2026. Prevoz je besplatan za sve putnike.
-        </p>
-      </header>
-
-      {/* Linije */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(8, 1fr)",
-          gap: 6,
-          padding: "0 20px 16px",
-        }}
-      >
-        {LINES.map((l) => {
-          const on = l.id === lineId;
-          return (
-            <button
-              key={l.id}
-              onClick={() => pickLine(l.id)}
-              aria-pressed={on}
-              aria-label={"Linija " + l.id}
-              style={{
-                width: "100%",
-                aspectRatio: "1 / 1",
-                maxWidth: 48,
-                borderRadius: 999,
-                padding: 0,
-                border: on ? "none" : "1px solid " + C.line,
-                background: on ? l.color : C.bg,
-                color: on ? "#FFFFFF" : C.mid,
-                fontSize: 16,
-                fontWeight: 650,
-                cursor: "pointer",
-              }}
-            >
-              {l.id}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Naziv linije */}
-      <div style={{ padding: "0 20px" }}>
-        <div
-          style={{
-            background: C.panelSoft,
-            borderLeft: "4px solid " + line.color,
-            borderRadius: 14,
-            padding: 16,
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 650, lineHeight: 1.35 }}>
-            {line.title}
-          </h2>
-        </div>
-      </div>
-
-      {/* Smer */}
-      {line.dirs.length > 1 && (
-        <div style={{ padding: "16px 20px 0" }}>
-          <button
-            onClick={swapDir}
-            aria-label="Promeni smer"
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              textAlign: "left",
-              borderRadius: 12,
-              padding: "10px 12px",
-              cursor: "pointer",
-              background: C.bg,
-              border: "1px solid " + C.line,
-            }}
-          >
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontSize: 11, color: C.faint }}>Polazak</span>
-              <span style={{ display: "block", fontSize: 14, fontWeight: 650 }}>{dir.from}</span>
-            </span>
-            <span
-              style={{
-                flexShrink: 0,
-                width: 34,
-                height: 34,
-                borderRadius: 999,
-                background: line.color,
-                color: "#FFFFFF",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M7 7h11l-3-3M17 17H6l3 3"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <span style={{ flex: 1, minWidth: 0, textAlign: "right" }}>
-              <span style={{ display: "block", fontSize: 11, color: C.faint }}>Dolazak</span>
-              <span style={{ display: "block", fontSize: 14, fontWeight: 650 }}>{dir.to}</span>
-            </span>
-          </button>
-        </div>
-      )}
-
-      {/* Dan */}
-      <div style={{ display: "flex", gap: 8, padding: "10px 20px 0" }}>
-        {DAYS.map((d) => {
-          const on = d.key === day;
-          return (
-            <button
-              key={d.key}
-              onClick={() => {
-                setDay(d.key);
-                setShowAll(false);
-              }}
-              aria-pressed={on}
-              style={{
-                ...btn(false),
-                background: on ? C.ink : C.bg,
-                color: on ? "#FFFFFF" : C.mid,
-                border: "1px solid " + (on ? C.ink : C.line),
-                fontSize: 13,
-                borderRadius: 12,
-                padding: "10px 0",
-              }}
-            >
-              {d.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Prikaz */}
-      <div style={{ display: "flex", gap: 8, padding: "10px 20px 0" }}>
-        {VIEWS.map((v) => (
-          <button
-            key={v.key}
-            onClick={() => setView(v.key)}
-            aria-pressed={v.key === view}
-            style={btn(v.key === view)}
-          >
-            {v.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Stajalište */}
-      {view !== "tabela" && hasStopTimes && (
-        <div style={{ padding: "14px 20px 0" }}>
-          <label
-            style={{ display: "block", fontSize: 11, color: C.faint, marginBottom: 4 }}
-            htmlFor="stajaliste"
-          >
-            Stajalište
-          </label>
-          <select
-            id="stajaliste"
-            value={idx}
-            onChange={(e) => {
-              setStopIdx(Number(e.target.value));
-              setShowAll(false);
-            }}
-            style={{
-              width: "100%",
-              borderRadius: 12,
-              padding: "10px 12px",
-              fontSize: 14,
-              fontWeight: 600,
-              color: C.ink,
-              background: C.bg,
-              border: "1px solid " + C.line,
-            }}
-          >
-            {dir.stops.map((st, i) => (
-              <option key={i} value={i}>
-                {i + 1}. {st}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Naredni polasci */}
-      {view === "sledeci" && (
-        <>
-          <div style={{ padding: "18px 20px 0" }}>
-            {departures.length === 0 ? (
-              <p style={{ margin: 0, fontSize: 14, color: C.mid }}>
-                Sa ovog stajališta nema polazaka {dayWord}.
-              </p>
-            ) : !isToday ? (
-              <p style={{ margin: 0, fontSize: 13, color: C.faint }}>
-                Prikazan je red vožnje za drugi dan, pa nema odbrojavanja.
-              </p>
-            ) : nextPos === -1 ? (
-              <p style={{ margin: 0, fontSize: 14, color: C.mid }}>
-                Danas više nema polazaka. Prvi sutra:{" "}
-                <strong>{fmt(departures[0].m)}</strong>
-              </p>
-            ) : (
-              <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-                <span
-                  style={{
-                    fontSize: 40,
-                    fontWeight: 680,
-                    lineHeight: 1,
-                    color: line.color,
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {fmt(departures[nextPos].m)}
-                </span>
-                <span style={{ fontSize: 14, color: C.mid }}>
-                  za {departures[nextPos].m - nowMin} min
-                </span>
-              </div>
-            )}
-          </div>
-
-          {departures.length > 0 && (
-            <div style={{ padding: "18px 20px 0" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                {visible.map((d, k) => {
-                  const pos = departures.indexOf(d);
-                  const isNext = pos === nextPos;
-                  const past = isToday && nextPos !== -1 && pos < nextPos;
-                  return (
-                    <div
-                      key={k}
-                      style={{
-                        borderRadius: 10,
-                        padding: "10px 0",
-                        textAlign: "center",
-                        fontSize: 15,
-                        fontWeight: 600,
-                        fontVariantNumeric: "tabular-nums",
-                        background: isNext ? line.color : C.panel,
-                        color: isNext ? "#FFFFFF" : past ? C.faint : C.ink,
-                      }}
-                    >
-                      {fmt(d.m)}
-                    </div>
-                  );
-                })}
-              </div>
-              {hidden > 0 && (
-                <button
-                  onClick={() => setShowAll(true)}
-                  style={{
-                    marginTop: 12,
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    fontSize: 13,
-                    color: C.mid,
-                    textDecoration: "underline",
-                    textUnderlineOffset: 4,
-                    cursor: "pointer",
-                  }}
-                >
-                  Prikaži i ranije polaske ({hidden})
-                </button>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Ceo dan sa izabranog stajališta */}
-      {view === "ceodan" && (
-        <div style={{ padding: "18px 20px 0" }}>
-          {departures.length === 0 ? (
-            <p style={{ margin: 0, fontSize: 14, color: C.mid }}>
-              Sa ovog stajališta nema polazaka {dayWord}.
-            </p>
-          ) : (
-            (() => {
-              const hours = Array.from(new Set(departures.map((d) => Math.floor(d.m / 60))));
-              return (
-                <div style={{ borderRadius: 14, overflow: "hidden", background: C.panelSoft }}>
-                  {hours.map((h, hi) => (
-                    <div
-                      key={h}
-                      style={{
-                        display: "flex",
-                        gap: 10,
-                        alignItems: "flex-start",
-                        padding: "6px 8px",
-                        borderTop: hi ? "1px solid " + C.line : "none",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 34,
-                          flexShrink: 0,
-                          textAlign: "center",
-                          padding: "6px 0",
-                          fontSize: 15,
-                          fontWeight: 700,
-                          color: line.color,
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      >
-                        {String(h).padStart(2, "0")}
-                      </div>
-                      <div style={{ flex: 1, display: "flex", flexWrap: "wrap", gap: 4 }}>
-                        {departures.map((d, pos) => {
-                          if (Math.floor(d.m / 60) !== h) return null;
-                          const isNext = pos === nextPos;
-                          const past = isToday && nextPos !== -1 && pos < nextPos;
-                          return (
-                            <span
-                              key={pos}
-                              style={{
-                                borderRadius: 6,
-                                padding: "5px 7px",
-                                fontSize: 14,
-                                fontWeight: 600,
-                                fontVariantNumeric: "tabular-nums",
-                                background: isNext ? line.color : C.panel,
-                                color: isNext ? "#FFFFFF" : past ? C.faint : C.ink,
-                              }}
-                            >
-                              {String(d.m % 60).padStart(2, "0")}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()
-          )}
-        </div>
-      )}
-
-      {/* Tabela stajališta x polasci */}
-      {view === "tabela" && (
-        <div style={{ padding: "18px 0 0" }}>
-          {trips.length === 0 ? (
-            <p style={{ margin: 0, padding: "0 20px", fontSize: 14, color: C.mid }}>
-              Ova linija ne saobraća {dayWord}.
-            </p>
-          ) : !hasStopTimes ? (
-            <p style={{ margin: 0, padding: "0 20px", fontSize: 14, color: C.mid }}>
-              Za ovu liniju nemam vremena po stajalištima, samo polaske sa prve stanice.
-            </p>
-          ) : (
-            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-              <table
-                style={{
-                  borderCollapse: "collapse",
-                  fontVariantNumeric: "tabular-nums",
-                  fontSize: 12,
-                }}
-              >
-                <tbody>
-                  {dir.stops.map((st, i) => (
-                    <tr key={i}>
-                      <th
-                        scope="row"
-                        style={{
-                          position: "sticky",
-                          left: 0,
-                          zIndex: 1,
-                          background: C.bg,
-                          textAlign: "left",
-                          fontWeight: i === 0 || i === dir.stops.length - 1 ? 700 : 500,
-                          color: i === 0 || i === dir.stops.length - 1 ? C.ink : C.mid,
-                          fontSize: 11.5,
-                          padding: "6px 10px 6px 20px",
-                          borderRight: "2px solid " + C.line,
-                          borderBottom: "1px solid " + C.line,
-                          minWidth: 132,
-                          maxWidth: 132,
-                          lineHeight: 1.25,
-                        }}
-                      >
-                        {st}
-                      </th>
-                      {trips.map((tr, ti) => {
-                        const m = timeAt(tr, dir, i);
-                        const isNext =
-                          nextPos !== -1 && departures[nextPos] && departures[nextPos].ti === ti;
-                        return (
-                          <td
-                            key={ti}
-                            style={{
-                              padding: "6px 8px",
-                              textAlign: "center",
-                              minWidth: 46,
-                              borderBottom: "1px solid " + C.line,
-                              background: isNext ? line.color + "1A" : "transparent",
-                              color: m === null ? C.faint : isNext ? line.color : C.ink,
-                              fontWeight: isNext ? 700 : 500,
-                            }}
-                          >
-                            {m === null ? "–" : fmt(m)}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <p style={{ padding: "10px 20px 0", margin: 0, fontSize: 12, color: C.faint }}>
-            Tabela se pomera levo-desno. Crtica znači da polazak ne dodiruje to stajalište.
-          </p>
-        </div>
-      )}
-
-      {/* Napomene */}
-      {line.notes.length > 0 && (
-        <div style={{ padding: "26px 20px 0" }}>
-          <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
-            {line.notes.map((n, i) => (
-              <li
-                key={i}
-                style={{ fontSize: 12.5, lineHeight: 1.6, color: C.mid, marginTop: i ? 8 : 0 }}
-              >
-                {n}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <p style={{ padding: "26px 20px 0", margin: 0, fontSize: 11.5, lineHeight: 1.6, color: C.faint }}>
-        Prevoznik: ASP „Strela“ Obrenovac, red vožnje upisan 28.08.2026. Vremena su planirana i
-        mogu da odstupaju od stvarnih dolazaka. Call centar:{" "}
-        <a
-          href="tel:+38122311617"
-          style={{ color: C.mid, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 3 }}
-        >
-          022/311-617
-        </a>
-      </p>
-    </div>
-  );
-}
-
-
-ReactDOM.createRoot(document.getElementById("app")).render(<RedVoznje />);
+  // Service worker samo na vebu. U Android aplikaciji su fajlovi već u paketu,
+  // pa bi keš iz starije verzije mogao da zadrži zastareo red vožnje.
+  var uAndroid = location.hostname === "appassets.androidplatform.net";
+  if (!uAndroid && "serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () { /* nebitno */ });
+    });
+  }
+})();
 </script>
 </body>
 </html>
