@@ -268,6 +268,113 @@ td.now { background: color-mix(in srgb, var(--accent) 10%, transparent); color: 
   .line-btn[aria-pressed="true"], .slot.next, .min.next, .dir-btn .swap { color: #fff; }
   .tab[aria-pressed="true"] { background: var(--ink); color: #12141a; }
 }
+
+/* ---------- Podsetnici (samo u Android aplikaciji) ---------- */
+
+button.slot, button.min {
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+button.slot { width: 100%; }
+
+/* Tačka u uglu označava da je podsetnik uključen */
+.slot.podsetnik, .min.podsetnik { position: relative; }
+.slot.podsetnik::after, .min.podsetnik::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--panel);
+}
+.slot.next.podsetnik::after, .min.next.podsetnik::after {
+  background: #fff;
+  box-shadow: none;
+}
+
+.poruka {
+  margin: 14px 20px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--panel-soft);
+  border-left: 3px solid var(--accent);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--mid);
+}
+
+.upozorenje {
+  margin: 14px 20px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--panel-soft);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--mid);
+}
+.link-ugradjen {
+  margin-left: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.podsetnici { padding: 26px 20px 0; }
+.podsetnici h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--mid);
+}
+.podsetnik-red {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--panel-soft);
+}
+.podsetnik-red + .podsetnik-red { margin-top: 6px; }
+.pod-levo { flex: 1; min-width: 0; }
+.pod-vreme {
+  display: block;
+  font-size: 16px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.pod-opis {
+  display: block;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--mid);
+  margin-top: 1px;
+}
+.pod-otkazi {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--mid);
+  font-size: 18px;
+  line-height: 1;
+}
+.pod-nota {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--faint);
+}
 </style>
 </head>
 <body>
@@ -560,6 +667,96 @@ const LINES = [
     return n;
   }
 
+  /* ---------- podsetnici (samo u Android aplikaciji) ---------- */
+
+  var MOST = (function () {
+    try {
+      return (window.Prevoz && window.Prevoz.postoji()) ? window.Prevoz : null;
+    } catch (e) {
+      return null;
+    }
+  })();
+
+  var MINUTA_PRE = [30, 10];
+
+  function podsetnikId(line, dir, day, idx, m) {
+    return line.id + "|" + dir.key + "|" + day + "|" + idx + "|" + fmt(m);
+  }
+
+  /** Prvi sledeći datum kada taj polazak stvarno kreće. */
+  function sledeciPut(day, m) {
+    var sada = new Date();
+    for (var d = 0; d < 14; d++) {
+      var t = new Date(sada.getFullYear(), sada.getMonth(), sada.getDate() + d,
+                       Math.floor(m / 60), m % 60, 0, 0);
+      if (t.getTime() <= sada.getTime() + 60000) continue;
+      if (dayKeyFor(t.getDay()) !== day) continue;
+      return t;
+    }
+    return null;
+  }
+
+  function ucitajPodsetnike() {
+    if (!MOST) return [];
+    try {
+      return JSON.parse(MOST.spisak() || "[]");
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function imaPodsetnik(id) {
+    for (var i = 0; i < state.podsetnici.length; i++) {
+      if (state.podsetnici[i].id === id) return true;
+    }
+    return false;
+  }
+
+  function opisDatuma(t) {
+    var sada = new Date();
+    var danas = new Date(sada.getFullYear(), sada.getMonth(), sada.getDate());
+    var dan = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+    var razlika = Math.round((dan - danas) / 86400000);
+    if (razlika === 0) return "danas";
+    if (razlika === 1) return "sutra";
+    var imena = ["u nedelju", "u ponedeljak", "u utorak", "u sredu",
+                 "u četvrtak", "u petak", "u subotu"];
+    return imena[t.getDay()];
+  }
+
+  /** Uključuje ili isključuje podsetnik za jedan polazak. */
+  function prebaciPodsetnik(line, dir, day, idx, m) {
+    if (!MOST) return;
+    var id = podsetnikId(line, dir, day, idx, m);
+
+    if (imaPodsetnik(id)) {
+      MOST.otkazi(id);
+      state.podsetnici = ucitajPodsetnike();
+      render();
+      return;
+    }
+
+    if (!MOST.imaDozvolu()) {
+      state.cekaDozvolu = { line: line.id, dir: dir.key, day: day, idx: idx, m: m };
+      MOST.zatraziDozvolu();
+      return;
+    }
+
+    var t = sledeciPut(day, m);
+    if (!t) return;
+
+    var naslov = "Linija " + line.id + " → " + dir.to;
+    var koliko = MOST.zakazi(id, t.getTime(), naslov, dir.stops[idx]);
+
+    state.poruka = koliko > 0
+      ? "Podsetnik je uključen: " + fmt(m) + " " + opisDatuma(t) +
+        ". Javićemo ti 30 i 10 minuta ranije."
+      : "Taj polazak je prebrzo — do njega je ostalo manje od 10 minuta.";
+
+    state.podsetnici = ucitajPodsetnike();
+    render();
+  }
+
   /* ---------- stanje ---------- */
 
   var saved = {};
@@ -571,7 +768,10 @@ const LINES = [
     stopIdx: typeof saved.stopIdx === "number" ? saved.stopIdx : 0,
     day: dayKeyFor(new Date().getDay()),
     view: "sledeci",
-    showAll: false
+    showAll: false,
+    podsetnici: [],
+    cekaDozvolu: null,
+    poruka: null
   };
 
   function save() {
@@ -742,6 +942,9 @@ const LINES = [
     else if (state.view === "ceodan") renderDay(line, departures, nextPos, isToday, dayDef);
     else renderTable(line, dir, trips, departures, nextPos, dayDef);
 
+    /* podsetnici */
+    renderPodsetnici();
+
     /* napomene */
     if (line.notes && line.notes.length) {
       var ul = el("ul", "notes");
@@ -758,6 +961,26 @@ const LINES = [
     a.href = "tel:+38122311617";
     foot.appendChild(a);
     root.appendChild(foot);
+  }
+
+  /** Polje sa vremenom polaska; u aplikaciji je dugme koje pali podsetnik. */
+  function polje(line, dir, m, cls, tekst, tag) {
+    var idx = Math.min(state.stopIdx, dir.stops.length - 1);
+    var id = podsetnikId(line, dir, state.day, idx, m);
+    var ima = MOST && imaPodsetnik(id);
+    if (ima) cls += " podsetnik";
+
+    if (!MOST) return el(tag || "div", cls, tekst);
+
+    var b = el("button", cls, tekst);
+    b.setAttribute("aria-label",
+      (ima ? "Isključi podsetnik za " : "Uključi podsetnik za ") + fmt(m));
+    b.setAttribute("aria-pressed", ima ? "true" : "false");
+    b.onclick = function () {
+      state.poruka = null;
+      prebaciPodsetnik(line, dir, state.day, idx, m);
+    };
+    return b;
   }
 
   function renderNext(line, departures, nextPos, isToday, nowMin, dayDef) {
@@ -783,13 +1006,14 @@ const LINES = [
     if (!departures.length) return;
 
     var start = (state.showAll || nextPos < 1) ? 0 : nextPos - 1;
+    var dir = currentDir(line);
     var grid = el("div", "grid");
     departures.slice(start).forEach(function (d, k) {
       var pos = start + k;
       var cls = "slot";
       if (pos === nextPos) cls += " next";
       else if (isToday && nextPos !== -1 && pos < nextPos) cls += " past";
-      var s = el("div", cls, fmt(d.m));
+      var s = polje(line, dir, d.m, cls, fmt(d.m));
       if (pos === nextPos) s.style.background = line.color;
       grid.appendChild(s);
     });
@@ -828,13 +1052,72 @@ const LINES = [
         var cls = "min";
         if (pos === nextPos) cls += " next";
         else if (isToday && nextPos !== -1 && pos < nextPos) cls += " past";
-        var s = el("span", cls, pad2(d.m % 60));
+        var s = polje(line, currentDir(line), d.m, cls, pad2(d.m % 60), "span");
         if (pos === nextPos) s.style.background = line.color;
         mins.appendChild(s);
       });
       row.appendChild(mins);
       box.appendChild(row);
     });
+    root.appendChild(box);
+  }
+
+  function renderPodsetnici() {
+    if (!MOST) return;
+
+    if (state.poruka) {
+      var p = el("p", "poruka", state.poruka);
+      root.appendChild(p);
+    }
+
+    // Upozorenje ako sistem ne dozvoljava alarme u tačno vreme
+    var tacno = true;
+    try { tacno = MOST.tacniAlarmi(); } catch (e) { }
+    if (!tacno && state.podsetnici.length) {
+      var w = el("div", "upozorenje");
+      w.appendChild(el("span", null,
+        "Obaveštenja mogu da kasne nekoliko minuta jer aplikaciji nije dozvoljeno " +
+        "zakazivanje u tačno vreme."));
+      var dug = el("button", "link-ugradjen", "Dozvoli");
+      dug.onclick = function () { MOST.otvoriPodesavanjaAlarma(); };
+      w.appendChild(dug);
+      root.appendChild(w);
+    }
+
+    if (!state.podsetnici.length) return;
+
+    var box = el("section", "podsetnici");
+    box.appendChild(el("h3", null, "Podsetnici"));
+
+    var lista = state.podsetnici.slice().sort(function (a, b) {
+      return a.polazak - b.polazak;
+    });
+
+    lista.forEach(function (r) {
+      var red = el("div", "podsetnik-red");
+      var t = new Date(r.polazak);
+
+      var levo = el("div", "pod-levo");
+      levo.appendChild(el("span", "pod-vreme",
+        pad2(t.getHours()) + ":" + pad2(t.getMinutes())));
+      levo.appendChild(el("span", "pod-opis",
+        r.naslov + " · " + r.stajaliste + " · " + opisDatuma(t)));
+      red.appendChild(levo);
+
+      var x = el("button", "pod-otkazi", "×");
+      x.setAttribute("aria-label", "Otkaži podsetnik");
+      x.onclick = function () {
+        MOST.otkazi(r.id);
+        state.poruka = null;
+        state.podsetnici = ucitajPodsetnike();
+        render();
+      };
+      red.appendChild(x);
+      box.appendChild(red);
+    });
+
+    box.appendChild(el("p", "pod-nota",
+      "Obaveštenje stiže 30 i 10 minuta pre polaska."));
     root.appendChild(box);
   }
 
@@ -875,7 +1158,24 @@ const LINES = [
 
   /* ---------- pokretanje ---------- */
 
+  state.podsetnici = ucitajPodsetnike();
   render();
+
+  // Kad korisnik odgovori na pitanje o dozvoli, nastavljamo tamo gde smo stali.
+  window.addEventListener("prevoz-dozvola", function (e) {
+    var c = state.cekaDozvolu;
+    state.cekaDozvolu = null;
+    if (!e.detail) {
+      state.poruka = "Bez dozvole za obaveštenja podsetnici ne mogu da rade.";
+      render();
+      return;
+    }
+    if (!c) { render(); return; }
+    var l = LINES.filter(function (x) { return x.id === c.line; })[0];
+    if (!l) { render(); return; }
+    var d = l.dirs.filter(function (x) { return x.key === c.dir; })[0] || l.dirs[0];
+    prebaciPodsetnik(l, d, c.day, c.idx, c.m);
+  });
 
   // Osveži tek kad se promeni minut, i ne dok korisnik čita tabelu,
   // da se prikaz ne pomera pod prstima.
@@ -893,6 +1193,8 @@ const LINES = [
     if (document.hidden) return;
     state.day = dayKeyFor(new Date().getDay());
     state.showAll = false;
+    state.poruka = null;
+    state.podsetnici = ucitajPodsetnike();
     lastMin = new Date().getMinutes();
     render();
   });

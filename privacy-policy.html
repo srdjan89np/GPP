@@ -40,11 +40,11 @@
 <body>
 
 <h1>Politika privatnosti</h1>
-<p class="updated">Aplikacija „Prevoz Pazova“ · poslednja izmena: 28. septembar 2026.</p>
+<p class="updated">Aplikacija „Prevoz Pazova“ · poslednja izmena: 6. oktobar 2026.</p>
 
 <div class="box">
   <strong>Ukratko:</strong> aplikacija ne prikuplja, ne šalje i ne deli nikakve podatke o vama.
-  Nema nalog, nema reklame, nema analitiku i nema pristup internetu.
+  Nema nalog, nema reklame, nema analitiku i nema pristup internetu. Podsetnici rade samo na vašem telefonu.
 </div>
 
 <h2>Koje podatke prikupljamo</h2>
@@ -52,9 +52,17 @@
 lični podatak, i ne postoji način da nam takav podatak pošaljete kroz aplikaciju.</p>
 
 <h2>Dozvole</h2>
-<p>Aplikacija ne traži nijednu dozvolu na uređaju. Nema ni dozvolu za pristup internetu
-(<code>android.permission.INTERNET</code>), što znači da tehnički ne može ništa da pošalje
-sa vašeg telefona.</p>
+<p>Aplikacija nema dozvolu za pristup internetu (<code>android.permission.INTERNET</code>),
+što znači da tehnički ne može ništa da pošalje sa vašeg telefona.</p>
+<p>Zbog podsetnika na polazak traže se tri dozvole, sve isključivo za rad na samom uređaju:</p>
+<ul>
+  <li><code>POST_NOTIFICATIONS</code> — prikaz obaveštenja. Traži se tek kada prvi put
+      uključite podsetnik; ako odbijete, ostatak aplikacije radi normalno.</li>
+  <li><code>SCHEDULE_EXACT_ALARM</code> — da obaveštenje stigne u tačno vreme, a ne sa
+      zakašnjenjem od nekoliko minuta.</li>
+  <li><code>RECEIVE_BOOT_COMPLETED</code> — da se zakazani podsetnici ne izgube kada
+      ugasite i upalite telefon.</li>
+</ul>
 
 <h2>Šta se čuva na uređaju</h2>
 <p>Da bi vas aplikacija sledeći put dočekala tamo gde ste stali, u lokalnoj memoriji
@@ -62,7 +70,8 @@ telefona čuva se:</p>
 <ul>
   <li>broj poslednje izabrane linije,</li>
   <li>izabrani smer,</li>
-  <li>izabrano stajalište.</li>
+  <li>izabrano stajalište,</li>
+  <li>podsetnici koje ste uključili — vreme polaska, broj linije i naziv stajališta.</li>
 </ul>
 <p>Ti podaci ostaju isključivo na vašem uređaju, nisu vezani za vas kao osobu i brišu se
 kada obrišete podatke aplikacije ili samu aplikaciju.</p>
