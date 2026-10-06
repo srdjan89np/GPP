@@ -275,8 +275,8 @@ td.now { background: color-mix(in srgb, var(--accent) 10%, transparent); color: 
 <noscript>Za prikaz reda vožnje potreban je JavaScript.</noscript>
 <script>
 /* Red vožnje — opština Stara Pazova.
-   Izvor: zvanične tabele ASP „Strela“ Obrenovac, upisane 28.08.2026,
-   u primeni od 01.09.2026.
+   Izvor: zvanične tabele ASP „Strela“ Obrenovac, u primeni od 01.09.2026,
+   sa izmenama na linijama 1, 2 i 6 od 06.10.2026.
    offsets = razmak u minutima od prvog stajališta (isti za sve polaske).
    Polazak "05:00" ide celom trasom; ["05:45",0,6] ide od stajališta 0 do 6. */
 
@@ -323,7 +323,7 @@ const LINES = [
       {
         key: "a", from: "Stara Pazova AS", to: "Aerodrom", stops: L1A, offsets: O1A,
         trips: {
-          radni: ["05:00",["05:45",0,6],"06:30",["06:40",0,6],"07:25","08:10","09:00","09:45","10:30","11:20","12:10",["12:45",0,6],"12:55","13:50","14:40","15:30","16:25","17:15","18:10","19:00","19:45","20:25","21:10","22:10"],
+          radni: ["05:00",["05:45",0,6],"06:30",["06:40",0,6],"07:15","08:10","09:00","09:45","10:30","11:20","12:10",["12:45",0,6],"12:55","13:50","14:40","15:30","16:25","17:15","18:10","19:00","19:45","20:25","21:10","22:10"],
           subota: [["05:45",0,6],"06:55","08:20","09:45","11:05","12:30",["13:30",0,6],"14:20",["15:15",0,6],"15:55","17:10","18:30",["19:30",0,6],"20:40",["22:10",0,6]],
           nedelja: ["06:40","08:20","09:45","11:05","12:30","14:20","15:55","17:10","18:30","20:40",["22:10",0,6]],
         },
@@ -331,7 +331,7 @@ const LINES = [
       {
         key: "b", from: "Aerodrom", to: "Stara Pazova AS", stops: L1B, offsets: O1B,
         trips: {
-          radni: ["05:20",["06:05",1,7],"06:55",["07:00",1,7],"07:45","08:40","09:20","10:10","10:55","11:40","12:30",["13:05",1,7],"13:15","14:15","15:05","16:00","16:50","17:40","18:35","19:25","20:05","20:50","21:35","22:30"],
+          radni: ["05:20",["06:05",1,7],"06:55",["07:00",1,7],"07:35","08:40","09:20","10:10","10:55","11:40","12:30",["13:05",1,7],"13:15","14:15","15:05","16:00","16:55","17:45","18:35","19:25","20:05","20:50","21:35","22:30"],
           subota: [["06:05",1,7],"07:25","08:40","10:25","11:45","12:50",["13:50",1,7],"14:40",["15:35",1,7],"16:25","17:45","19:05",["19:50",1,7],"21:15",["22:30",1,7]],
           nedelja: ["07:25","09:25","10:25","11:45","13:05","14:40","16:25","17:45","19:05","21:15",["22:30",1,7]],
         },
@@ -347,7 +347,7 @@ const LINES = [
       {
         key: "a", from: "Stara Pazova AS", to: "Krnješevci", stops: L2A, offsets: O2A,
         trips: {
-          radni: [["04:30",0,9],"05:00","05:40","06:35","07:20","09:00","11:20","12:55","13:45","14:25","15:30","16:30","18:15","19:05","19:55","21:05","22:15"],
+          radni: [["04:30",0,9],"05:00","05:40","06:35","07:15","09:00","11:20","12:55","13:45","14:25","15:30","16:30","18:15","19:05","19:55","21:05","22:15"],
           subota: ["05:00","06:15","07:10",["09:00",0,9],"10:50","13:10","14:25","15:15","16:35","19:05",["21:10",0,9],"22:15"],
           nedelja: ["06:00",["09:00",0,9],"10:50",["13:05",0,9],"15:00","16:30","19:05",["21:05",0,9]],
         },
@@ -442,7 +442,10 @@ const LINES = [
     id: "6",
     color: "#C4426F",
     title: "Gradska linija Stara Pazova",
-    notes: ["Polasci preko Petrović Salaša saobraćaju samo ponedeljkom, četvrtkom i petkom."],
+    notes: [
+      "PAŽNJA: od 6. oktobra 2026. vremena na ovoj liniji su izmenjena, a obrt cele linije skraćen je sa 40 na 35 minuta. Ovde je još uvek prikazan prethodni red vožnje — proveri zvanični na sajtu opštine.",
+      "Polasci preko Petrović Salaša saobraćaju samo ponedeljkom, četvrtkom i petkom.",
+    ],
     dirs: [
       {
         key: "a", from: "Železnička stanica", to: "kružno", stops: L6A, offsets: O6A,
@@ -620,7 +623,7 @@ const LINES = [
     var head = el("header", "head");
     head.appendChild(el("h1", null, "Gradski prevoz Pazova"));
     head.appendChild(el("p", null,
-      "Red vožnje na snazi od 1. septembra 2026. Prevoz je besplatan za sve putnike."));
+      "Red vožnje sa izmenama od 6. oktobra 2026. Prevoz je besplatan za sve putnike."));
     root.appendChild(head);
 
     /* linije */
@@ -738,8 +741,9 @@ const LINES = [
 
     var foot = el("p", "foot");
     foot.appendChild(document.createTextNode(
-      "Prevoznik: ASP „Strela“ Obrenovac, red vožnje upisan 28.08.2026. " +
-      "Vremena su planirana i mogu da odstupaju od stvarnih dolazaka. Call centar: "));
+      "Prevoznik: ASP „Strela“ Obrenovac. Red vožnje važi od 01.09.2026, sa izmenama " +
+      "na linijama 1, 2 i 6 od 06.10.2026. Vremena su planirana i mogu da odstupaju od " +
+      "stvarnih dolazaka. Call centar: "));
     var a = el("a", null, "022/311-617");
     a.href = "tel:+38122311617";
     foot.appendChild(a);
@@ -883,14 +887,6 @@ const LINES = [
     render();
   });
 
-  // Service worker samo na vebu. U Android aplikaciji su fajlovi već u paketu,
-  // pa bi keš iz starije verzije mogao da zadrži zastareo red vožnje.
-  var uAndroid = location.hostname === "appassets.androidplatform.net";
-  if (!uAndroid && "serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("sw.js").catch(function () { /* nebitno */ });
-    });
-  }
 })();
 </script>
 </body>
