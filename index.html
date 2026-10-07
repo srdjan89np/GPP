@@ -375,6 +375,49 @@ button.slot { width: 100%; }
   font-size: 11.5px;
   color: var(--faint);
 }
+
+/* Objašnjenje podsetnika — stoji do prvog korišćenja */
+.savet {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 18px 20px 0;
+  padding: 12px 12px 12px 14px;
+  border-radius: 14px;
+  background: var(--panel-soft);
+  border-left: 3px solid var(--accent);
+}
+.savet-ikona {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--accent);
+  display: flex;
+}
+.savet-tekst { flex: 1; min-width: 0; }
+.savet-tekst strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.savet-tekst p {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--mid);
+}
+.savet-zatvori {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin: -2px -2px 0 0;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--faint);
+  font-size: 18px;
+  line-height: 1;
+}
 </style>
 </head>
 <body>
@@ -753,6 +796,11 @@ const LINES = [
         ". Javićemo ti 30 i 10 minuta ranije."
       : "Taj polazak je prebrzo — do njega je ostalo manje od 10 minuta.";
 
+    if (koliko > 0 && !state.savetVidjen) {
+      state.savetVidjen = true;
+      save();
+    }
+
     state.podsetnici = ucitajPodsetnike();
     render();
   }
@@ -771,13 +819,15 @@ const LINES = [
     showAll: false,
     podsetnici: [],
     cekaDozvolu: null,
-    poruka: null
+    poruka: null,
+    savetVidjen: !!saved.savetVidjen
   };
 
   function save() {
     try {
       localStorage.setItem("gpp", JSON.stringify({
-        lineId: state.lineId, dirKey: state.dirKey, stopIdx: state.stopIdx
+        lineId: state.lineId, dirKey: state.dirKey, stopIdx: state.stopIdx,
+        savetVidjen: state.savetVidjen
       }));
     } catch (e) { /* privatni režim — nije bitno */ }
   }
@@ -963,6 +1013,43 @@ const LINES = [
     root.appendChild(foot);
   }
 
+  /**
+   * Kratko objašnjenje podsetnika. Stoji dok korisnik ne napravi prvi podsetnik
+   * ili ne zatvori savet, pa se više ne pojavljuje.
+   */
+  function renderSavet() {
+    if (!MOST || state.savetVidjen) return;
+
+    var box = el("div", "savet");
+
+    var ikona = el("span", "savet-ikona");
+    ikona.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+      '<path d="M12 3a6 6 0 0 0-6 6c0 3-1.2 4.3-1.8 5-.4.4-.1 1 .4 1h14.8c.5 0 .8-.6.4-1-.6-.7-1.8-2-1.8-5a6 6 0 0 0-6-6z" ' +
+      'stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>' +
+      '<path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+    box.appendChild(ikona);
+
+    var tekst = el("div", "savet-tekst");
+    tekst.appendChild(el("strong", null, "Podsetnik na polazak"));
+    tekst.appendChild(el("p", null,
+      "Dodirni bilo koje vreme polaska i javićemo ti 30 i 10 minuta pre nego što " +
+      "autobus krene. Obaveštenje stiže i kada je aplikacija zatvorena."));
+    tekst.appendChild(el("p", null,
+      "Uključeni podsetnik ima tačkicu u uglu. Dodirni isto vreme ponovo da ga isključiš."));
+    box.appendChild(tekst);
+
+    var x = el("button", "savet-zatvori", "×");
+    x.setAttribute("aria-label", "Zatvori objašnjenje");
+    x.onclick = function () {
+      state.savetVidjen = true;
+      save();
+      render();
+    };
+    box.appendChild(x);
+
+    root.appendChild(box);
+  }
+
   /** Polje sa vremenom polaska; u aplikaciji je dugme koje pali podsetnik. */
   function polje(line, dir, m, cls, tekst, tag) {
     var idx = Math.min(state.stopIdx, dir.stops.length - 1);
@@ -1005,6 +1092,8 @@ const LINES = [
 
     if (!departures.length) return;
 
+    renderSavet();
+
     var start = (state.showAll || nextPos < 1) ? 0 : nextPos - 1;
     var dir = currentDir(line);
     var grid = el("div", "grid");
@@ -1034,6 +1123,8 @@ const LINES = [
       root.appendChild(p);
       return;
     }
+    renderSavet();
+
     var hours = [];
     departures.forEach(function (d) {
       var h = Math.floor(d.m / 60);
@@ -1117,7 +1208,8 @@ const LINES = [
     });
 
     box.appendChild(el("p", "pod-nota",
-      "Obaveštenje stiže 30 i 10 minuta pre polaska."));
+      "Obaveštenje stiže 30 i 10 minuta pre polaska. Podsetnik važi za prvi sledeći " +
+      "put kada taj polazak kreće i posle toga se sam briše."));
     root.appendChild(box);
   }
 
