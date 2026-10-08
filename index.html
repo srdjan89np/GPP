@@ -418,6 +418,38 @@ button.slot { width: 100%; }
   font-size: 18px;
   line-height: 1;
 }
+
+/* Izvor podataka — obavezan link ka zvaničnoj objavi */
+.izvor {
+  margin: 26px 20px 0;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--panel-soft);
+  border-left: 3px solid var(--accent);
+}
+.izvor h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.izvor p {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--mid);
+}
+.izvor p:last-child { margin-bottom: 0; }
+.izvor-veza {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 2px 0;
+}
+.izvor-nezvanicno { color: var(--faint) !important; font-size: 12px !important; }
 </style>
 </head>
 <body>
@@ -1002,11 +1034,30 @@ const LINES = [
       root.appendChild(ul);
     }
 
+    /* Izvor podataka — vidno izdvojen, sa linkom ka zvaničnoj objavi. */
+    var izvor = el("section", "izvor");
+    izvor.appendChild(el("h3", null, "Izvor podataka"));
+    izvor.appendChild(el("p", null,
+      "Vremena su prepisana iz zvaničnog reda vožnje koji objavljuje Opština Stara Pazova. " +
+      "Red vožnje važi od 01.09.2026, sa izmenama na linijama 1, 2 i 6 od 06.10.2026."));
+
+    var vezaWrap = el("p", null);
+    var veza = el("a", "izvor-veza", "Zvanični red vožnje — starapazova.rs");
+    veza.href = "https://www.starapazova.rs/privreda/saobracaj-1.html";
+    veza.setAttribute("rel", "noopener noreferrer");
+    vezaWrap.appendChild(veza);
+    izvor.appendChild(vezaWrap);
+
+    izvor.appendChild(el("p", "izvor-nezvanicno",
+      "Ovo je nezvanična aplikacija. Nije napravljena od strane Opštine Stara Pazova niti " +
+      "prevoznika i nije povezana sa njima. U slučaju neslaganja, važi zvanični red vožnje " +
+      "na gornjoj adresi."));
+    root.appendChild(izvor);
+
     var foot = el("p", "foot");
     foot.appendChild(document.createTextNode(
-      "Prevoznik: ASP „Strela“ Obrenovac. Red vožnje važi od 01.09.2026, sa izmenama " +
-      "na linijama 1, 2 i 6 od 06.10.2026. Vremena su planirana i mogu da odstupaju od " +
-      "stvarnih dolazaka. Call centar: "));
+      "Prevoz obavlja ASP „Strela“ Obrenovac. Vremena su planirana i mogu da odstupaju od " +
+      "stvarnih dolazaka. Call centar prevoznika: "));
     var a = el("a", null, "022/311-617");
     a.href = "tel:+38122311617";
     foot.appendChild(a);
