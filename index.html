@@ -419,37 +419,18 @@ button.slot { width: 100%; }
   line-height: 1;
 }
 
-/* Izvor podataka — obavezan link ka zvaničnoj objavi */
+/* Izvor podataka — jedan diskretan red; link je obavezan, vidi app.js */
 .izvor {
-  margin: 26px 20px 0;
-  padding: 14px;
-  border-radius: 14px;
-  background: var(--panel-soft);
-  border-left: 3px solid var(--accent);
-}
-.izvor h3 {
-  margin: 0 0 6px;
-  font-size: 13px;
-  font-weight: 650;
-  color: var(--ink);
-}
-.izvor p {
-  margin: 0 0 8px;
-  font-size: 12.5px;
+  margin: 24px 20px 0;
+  font-size: 12px;
   line-height: 1.6;
-  color: var(--mid);
+  color: var(--faint);
 }
-.izvor p:last-child { margin-bottom: 0; }
 .izvor-veza {
-  display: inline-block;
-  font-size: 13px;
-  font-weight: 650;
-  color: var(--accent);
+  color: var(--mid);
   text-decoration: underline;
-  text-underline-offset: 3px;
-  padding: 2px 0;
+  text-underline-offset: 2px;
 }
-.izvor-nezvanicno { color: var(--faint) !important; font-size: 12px !important; }
 </style>
 </head>
 <body>
@@ -752,7 +733,7 @@ const LINES = [
     }
   })();
 
-  var MINUTA_PRE = [30, 10];
+  var MINUTA_PRE = [60, 30];
 
   function podsetnikId(line, dir, day, idx, m) {
     return line.id + "|" + dir.key + "|" + day + "|" + idx + "|" + fmt(m);
@@ -823,10 +804,19 @@ const LINES = [
     var naslov = "Linija " + line.id + " → " + dir.to;
     var koliko = MOST.zakazi(id, t.getTime(), naslov, dir.stops[idx]);
 
-    state.poruka = koliko > 0
+    /*
+     * `koliko` je broj stvarno zakazanih obaveštenja. Ako je do polaska ostalo
+     * manje od sat vremena, prvo obaveštenje otpada, pa poruka to i kaže —
+     * obećati oba kad stiže samo jedno bio bi tih promašaj.
+     */
+    state.poruka = koliko > 1
       ? "Podsetnik je uključen: " + fmt(m) + " " + opisDatuma(t) +
-        ". Javićemo ti 30 i 10 minuta ranije."
-      : "Taj polazak je prebrzo — do njega je ostalo manje od 10 minuta.";
+        ". Javićemo ti sat vremena i 30 minuta ranije."
+      : koliko === 1
+        ? "Podsetnik je uključen: " + fmt(m) + " " + opisDatuma(t) +
+          ". Javićemo ti 30 minuta ranije."
+        : "Taj polazak je prebrzo — do njega je ostalo manje od " +
+          MINUTA_PRE[MINUTA_PRE.length - 1] + " minuta.";
 
     if (koliko > 0 && !state.savetVidjen) {
       state.savetVidjen = true;
@@ -1034,24 +1024,17 @@ const LINES = [
       root.appendChild(ul);
     }
 
-    /* Izvor podataka — vidno izdvojen, sa linkom ka zvaničnoj objavi. */
-    var izvor = el("section", "izvor");
-    izvor.appendChild(el("h3", null, "Izvor podataka"));
-    izvor.appendChild(el("p", null,
-      "Vremena su prepisana iz zvaničnog reda vožnje koji objavljuje Opština Stara Pazova. " +
-      "Red vožnje važi od 01.09.2026, sa izmenama na linijama 1, 2 i 6 od 06.10.2026."));
-
-    var vezaWrap = el("p", null);
-    var veza = el("a", "izvor-veza", "Zvanični red vožnje — starapazova.rs");
+    /*
+     * Izvor podataka — jedan red, ali obavezan: Google traži link ka zvaničnoj
+     * objavi za podatke koje objavljuje organ vlasti, plus izjavu da aplikacija
+     * nije zvanična. Ne brisati bez zamene.
+     */
+    var izvor = el("p", "izvor");
+    izvor.appendChild(document.createTextNode("Nezvanična aplikacija. Izvor: "));
+    var veza = el("a", "izvor-veza", "zvanični red vožnje Opštine Stara Pazova");
     veza.href = "https://www.starapazova.rs/privreda/saobracaj-1.html";
     veza.setAttribute("rel", "noopener noreferrer");
-    vezaWrap.appendChild(veza);
-    izvor.appendChild(vezaWrap);
-
-    izvor.appendChild(el("p", "izvor-nezvanicno",
-      "Ovo je nezvanična aplikacija. Nije napravljena od strane Opštine Stara Pazova niti " +
-      "prevoznika i nije povezana sa njima. U slučaju neslaganja, važi zvanični red vožnje " +
-      "na gornjoj adresi."));
+    izvor.appendChild(veza);
     root.appendChild(izvor);
 
     var foot = el("p", "foot");
@@ -1083,8 +1066,8 @@ const LINES = [
     var tekst = el("div", "savet-tekst");
     tekst.appendChild(el("strong", null, "Podsetnik na polazak"));
     tekst.appendChild(el("p", null,
-      "Dodirni bilo koje vreme polaska i javićemo ti 30 i 10 minuta pre nego što " +
-      "autobus krene. Obaveštenje stiže i kada je aplikacija zatvorena."));
+      "Dodirni bilo koje vreme polaska i javićemo ti sat vremena, pa opet 30 minuta pre " +
+      "nego što autobus krene. Obaveštenje stiže i kada je aplikacija zatvorena."));
     tekst.appendChild(el("p", null,
       "Uključeni podsetnik ima tačkicu u uglu. Dodirni isto vreme ponovo da ga isključiš."));
     box.appendChild(tekst);
@@ -1259,7 +1242,7 @@ const LINES = [
     });
 
     box.appendChild(el("p", "pod-nota",
-      "Obaveštenje stiže 30 i 10 minuta pre polaska. Podsetnik važi za prvi sledeći " +
+      "Obaveštenje stiže sat vremena i 30 minuta pre polaska. Podsetnik važi za prvi sledeći " +
       "put kada taj polazak kreće i posle toga se sam briše."));
     root.appendChild(box);
   }
@@ -1342,6 +1325,14 @@ const LINES = [
     render();
   });
 
+  // Service worker samo na vebu. U Android aplikaciji su fajlovi već u paketu,
+  // pa bi keš iz starije verzije mogao da zadrži zastareo red vožnje.
+  var uAndroid = location.hostname === "appassets.androidplatform.net";
+  if (!uAndroid && "serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () { /* nebitno */ });
+    });
+  }
 })();
 </script>
 </body>
